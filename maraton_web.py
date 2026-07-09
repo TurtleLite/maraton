@@ -130,7 +130,13 @@ function cargar() {
       const tr = document.createElement('tr');
       const llegada = c.tiempo_llegada || '—';
       const pos = c.posicion ? '#' + c.posicion : '—';
-      tr.innerHTML = '<td>' + c.dorsal + '</td><td>' + c.nombre + '</td><td>' + llegada + '</td><td>' + pos + '</td><td><button class="rojo" style="padding:4px 10px;font-size:.8rem" onclick="borrar(\'' + c.dorsal + '\')">✕</button></td>';
+      tr.innerHTML = '<td>' + c.dorsal + '</td><td>' + c.nombre + '</td><td>' + llegada + '</td><td>' + pos + '</td><td></td>';
+      const btn = document.createElement('button');
+      btn.className = 'rojo';
+      btn.style.cssText = 'padding:4px 10px;font-size:.8rem';
+      btn.textContent = '✕';
+      btn.onclick = () => borrar(c.dorsal);
+      tr.lastChild.appendChild(btn);
       tbody.appendChild(tr);
     });
     document.getElementById('contador').textContent = 'Total: ' + (d.corredores||[]).length + ' corredores';
