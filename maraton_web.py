@@ -7,12 +7,16 @@ from flask import Flask, request, jsonify, render_template_string
 app = Flask(__name__)
 app.static_folder = "static"
 
-DB_URL = os.environ.get("DATABASE_URL", "postgresql://maraton_db_yu80_user:PGKNIB3F5HTynSqz7Vx6x01vJcQVG3bD@dpg-d97vq9qabeoc739aqnmg-a.virginia-postgres.render.com/maraton_db_yu80?sslmode=require?sslmode=require")
+DB_URL = os.environ.get("DATABASE_URL", "postgresql://maraton_db_yu80_user:PGKNIB3F5HTynSqz7Vx6x01vJcQVG3bD@dpg-d97vq9qabeoc739aqnmg-a.virginia-postgres.render.com/maraton_db_yu80?sslmode=require?sslmode=require?sslmode=require")
 
 def get_db():
-    conn = psycopg2.connect(DB_URL)
-    conn.autocommit = True
-    return conn
+    try:
+        conn = psycopg2.connect(DB_URL, connect_timeout=5)
+        conn.autocommit = True
+        return conn
+    except Exception as e:
+        print("DB error:", e)
+        return None
 
 def init_db():
 def get_db():
