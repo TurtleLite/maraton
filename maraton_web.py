@@ -83,6 +83,7 @@ tr:hover { background: #f8fafc; }
 .contador { font-size: .85rem; color: #64748b; margin-bottom: 8px; }
 .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #1e293b; color: #fff; padding: 14px 24px; border-radius: 10px; font-weight: 600; font-size: .95rem; box-shadow: 0 8px 30px rgba(0,0,0,.25); z-index: 999; opacity: 0; transition: opacity .3s, transform .3s; pointer-events: none; }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.footer { position: fixed; bottom: 12px; left: 0; right: 0; display: flex; justify-content: space-between; padding: 0 20px; font-size: .7rem; color: rgba(255,255,255,.4); pointer-events: none; z-index: 0; }
 .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.4); display: flex; align-items: center; justify-content: center; z-index: 1000; opacity: 0; transition: opacity .2s; pointer-events: none; }
 .modal-overlay.show { opacity: 1; pointer-events: auto; }
 .modal-card { background: #fff; border-radius: 14px; padding: 28px; max-width: 440px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,.25); text-align: center; }
@@ -132,6 +133,7 @@ tr:hover { background: #f8fafc; }
     </table>
   </div>
 </div>
+<div class="footer"><span>FIXTLE</span><span>TURTLELITE</span></div>
 <div id="toast" class="toast"></div>
 <div class="modal-overlay" id="modal">
   <div class="modal-card">
