@@ -28,6 +28,7 @@ def init_db():
         cur = conn.cursor()
         cur.execute("CREATE TABLE IF NOT EXISTS carrera (id SERIAL PRIMARY KEY, iniciada BOOLEAN DEFAULT FALSE, hora_inicio TIMESTAMP)")
         cur.execute("CREATE TABLE IF NOT EXISTS corredores (id SERIAL PRIMARY KEY, dorsal VARCHAR(20) UNIQUE NOT NULL, nombre VARCHAR(200) NOT NULL, tiempo_llegada TIMESTAMP, posicion INTEGER)")
+        cur.execute("ALTER TABLE corredores ADD COLUMN IF NOT EXISTS categoria VARCHAR(20) DEFAULT ''")
         cur.execute("SELECT COUNT(*) FROM carrera")
         if cur.fetchone()[0] == 0:
             cur.execute("INSERT INTO carrera (iniciada) VALUES (FALSE)")
@@ -127,6 +128,11 @@ td button:active { transform: scale(.9); }
   <div class="barra">
     <input id="dorsal-input" placeholder="Número" size="6">
     <input id="nombre-input" placeholder="Nombre del corredor">
+    <select id="categoria-input" style="padding:8px 10px;font-size:.875rem;border-radius:6px;border:1px solid #d4d8dd;font-family:inherit;background:#f8f9fa;color:#1a1a2e;outline:none">
+      <option value="">Sin categoría</option>
+      <option value="Novato">Novato</option>
+      <option value="Profesional">Profesional</option>
+    </select>
     <button onclick="registrar(this)">Registrar</button>
     <button id="btn-iniciar" class="verde" onclick="iniciar()">Iniciar carrera</button>
     <button id="btn-finalizar" class="rojo" onclick="finalizar()" style="display:none">Finalizar carrera</button>
@@ -146,7 +152,7 @@ td button:active { transform: scale(.9); }
   <div class="contador" id="contador"></div>
   <div class="tabla-wrap">
     <table>
-      <thead><tr><th>Núm.</th><th>Nombre</th><th>Llegada</th><th>Posición</th><th>Acción</th></tr></thead>
+      <thead><tr><th>Núm.</th><th>Nombre</th><th>Cat.</th><th>Llegada</th><th>Posición</th><th>Acción</th></tr></thead>
       <tbody id="tabla"></tbody>
     </table>
   </div>
@@ -172,7 +178,7 @@ function cargar() {
       tr.style.animationDelay = (i * 0.035) + 's';
       const llegada = c.tiempo_llegada || '—';
       const pos = c.posicion ? '#' + c.posicion : '—';
-      tr.innerHTML = '<td>' + c.dorsal + '</td><td>' + c.nombre + '</td><td>' + llegada + '</td><td>' + pos + '</td><td></td>';
+      tr.innerHTML = '<td>' + c.dorsal + '</td><td>' + c.nombre + '</td><td>' + (c.categoria||'') + '</td><td>' + llegada + '</td><td>' + pos + '</td><td></td>';
       const btn = document.createElement('button');
       btn.className = 'rojo';
       btn.style.cssText = 'padding:4px 10px;font-size:.8rem';
@@ -229,8 +235,9 @@ function _fetch(url, opts, btn) {
 function registrar(btn) {
   const dorsal = document.getElementById('dorsal-input').value.trim();
   const nombre = document.getElementById('nombre-input').value.trim();
+  const categoria = document.getElementById('categoria-input').value;
   if (!dorsal || !nombre) return mostrarModal('Completa número y nombre.');
-  _fetch('/api/registrar', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({dorsal, nombre}) }, btn)
+  _fetch('/api/registrar', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({dorsal, nombre, categoria}) }, btn)
     .then(d=> { if(d.error) mostrarModal(d.error); else { document.getElementById('dorsal-input').value=''; document.getElementById('nombre-input').value=''; toast('Corredor registrado'); cargar(); } });
 }
 function iniciar() {
@@ -292,7 +299,7 @@ def api_datos():
         return jsonify(carrera_iniciada=False, hora_inicio=None, corredores=[])
     try:
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-        cur.execute("SELECT dorsal, nombre, tiempo_llegada, posicion FROM corredores ORDER BY id")
+        cur.execute("SELECT dorsal, nombre, categoria, tiempo_llegada, posicion FROM corredores ORDER BY id")
         rows = cur.fetchall()
         corredores = []
         for r in rows:
@@ -315,7 +322,7 @@ def api_buscar():
         return jsonify(carrera_iniciada=False, hora_inicio=None, corredores=[])
     try:
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-        cur.execute("SELECT dorsal, nombre, tiempo_llegada, posicion FROM corredores WHERE dorsal ILIKE %s OR nombre ILIKE %s ORDER BY id", (f"%{q}%", f"%{q}%"))
+        cur.execute("SELECT dorsal, nombre, categoria, tiempo_llegada, posicion FROM corredores WHERE dorsal ILIKE %s OR nombre ILIKE %s ORDER BY id", (f"%{q}%", f"%{q}%"))
         rows = cur.fetchall()
         corredores = []
         for r in rows:
@@ -334,6 +341,7 @@ def api_registrar():
     init_db()
     dorsal = request.json.get("dorsal", "").strip()
     nombre = request.json.get("nombre", "").strip()
+    categoria = request.json.get("categoria", "").strip()
     if not dorsal or not nombre:
         return jsonify(error="Completa todos los campos."), 400
     conn = get_db()
@@ -341,7 +349,7 @@ def api_registrar():
         return jsonify(error="Base de datos no disponible"), 503
     try:
         cur = conn.cursor()
-        cur.execute("INSERT INTO corredores (dorsal, nombre) VALUES (%s, %s)", (dorsal, nombre))
+        cur.execute("INSERT INTO corredores (dorsal, nombre, categoria) VALUES (%s, %s, %s)", (dorsal, nombre, categoria))
         conn.commit()
         cur.close()
         conn.close()
@@ -431,7 +439,7 @@ def api_resultados():
             cur.close()
             conn.close()
             return jsonify(error="La carrera no ha iniciado."), 400
-        cur.execute("SELECT dorsal, nombre, posicion, tiempo_llegada FROM corredores WHERE tiempo_llegada IS NOT NULL ORDER BY posicion")
+        cur.execute("SELECT dorsal, nombre, categoria, posicion, tiempo_llegada FROM corredores WHERE tiempo_llegada IS NOT NULL ORDER BY posicion")
         rows = cur.fetchall()
         if not rows:
             cur.close()
@@ -439,10 +447,10 @@ def api_resultados():
             return jsonify(error="Aún no hay llegadas."), 400
         res = []
         for r in rows:
-            trans = r[3] - inicio
+            trans = r[4] - inicio
             h, resto = divmod(int(trans.total_seconds()), 3600)
             m, s = divmod(resto, 60)
-            res.append({"pos": r[2], "dorsal": r[0], "nombre": r[1], "tiempo": f"{h}h {m}m {s}s"})
+            res.append({"pos": r[3], "dorsal": r[0], "nombre": r[1], "categoria": r[2], "tiempo": f"{h}h {m}m {s}s"})
         cur.close()
         conn.close()
         return jsonify(llegados=res)
@@ -484,12 +492,15 @@ def api_importar_excel():
         headers = [cell.value for cell in ws[1]]
         col_dorsal = None
         col_nombre = None
+        col_categoria = None
         for i, h in enumerate(headers):
             h_lower = str(h).strip().lower() if h else ""
             if "dorsal" in h_lower or "numero" in h_lower or "num" in h_lower:
                 col_dorsal = i
             if "nombre" in h_lower or "corredor" in h_lower:
                 col_nombre = i
+            if "novato" in h_lower or "profesional" in h_lower or "categoria" in h_lower or "cat" in h_lower:
+                col_categoria = i
         if col_dorsal is None or col_nombre is None:
             return jsonify(error="No se encontraron columnas 'Número' y 'Nombre'."), 400
         conn = get_db()
@@ -502,8 +513,13 @@ def api_importar_excel():
             nombre = str(row[col_nombre]).strip() if row[col_nombre] is not None else ""
             if not dorsal or not nombre:
                 continue
+            categoria = str(row[col_categoria]).strip() if col_categoria is not None and row[col_categoria] is not None else ""
+            if categoria.lower() in ("novato", "profesional"):
+                pass
+            else:
+                categoria = ""
             try:
-                cur.execute("INSERT INTO corredores (dorsal, nombre) VALUES (%s, %s)", (dorsal, nombre))
+                cur.execute("INSERT INTO corredores (dorsal, nombre, categoria) VALUES (%s, %s, %s)", (dorsal, nombre, categoria))
                 conn.commit()
                 cont += 1
             except psycopg2.errors.UniqueViolation:
@@ -550,19 +566,19 @@ def api_reporte():
             cur.close()
             conn.close()
             return jsonify(error="La carrera no ha iniciado."), 400
-        cur.execute("SELECT posicion, dorsal, nombre, tiempo_llegada FROM corredores WHERE tiempo_llegada IS NOT NULL ORDER BY posicion")
+        cur.execute("SELECT posicion, dorsal, nombre, categoria, tiempo_llegada FROM corredores WHERE tiempo_llegada IS NOT NULL ORDER BY posicion")
         rows = cur.fetchall()
         cur.close()
         conn.close()
         wb = openpyxl.Workbook()
         ws = wb.active
         ws.title = "Reporte Burrotón"
-        ws.append(["Posición", "Núm.", "Nombre", "Tiempo Llegada", "Tiempo Transcurrido"])
+        ws.append(["Posición", "Núm.", "Nombre", "Categoría", "Tiempo Llegada", "Tiempo Transcurrido"])
         for r in rows:
-            trans = r[3] - inicio
+            trans = r[4] - inicio
             h, resto = divmod(int(trans.total_seconds()), 3600)
             m, s = divmod(resto, 60)
-            ws.append([r[0], r[1], r[2], r[3].isoformat(), f"{h}h {m}m {s}s"])
+            ws.append([r[0], r[1], r[2], r[3], r[4].isoformat(), f"{h}h {m}m {s}s"])
         buf = io.BytesIO()
         wb.save(buf)
         buf.seek(0)
