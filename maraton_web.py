@@ -82,6 +82,18 @@ tr:hover { background: #f8fafc; }
 .contador { font-size: .85rem; color: #64748b; margin-bottom: 8px; }
 .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #1e293b; color: #fff; padding: 14px 24px; border-radius: 10px; font-weight: 600; font-size: .95rem; box-shadow: 0 8px 30px rgba(0,0,0,.25); z-index: 999; opacity: 0; transition: opacity .3s, transform .3s; pointer-events: none; }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.4); display: flex; align-items: center; justify-content: center; z-index: 1000; opacity: 0; transition: opacity .2s; pointer-events: none; }
+.modal-overlay.show { opacity: 1; pointer-events: auto; }
+.modal-card { background: #fff; border-radius: 14px; padding: 28px; max-width: 440px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,.25); text-align: center; }
+.modal-card p { font-size: 1rem; color: #1e293b; margin-bottom: 20px; line-height: 1.5; white-space: pre-wrap; }
+.modal-card .botones { display: flex; gap: 10px; justify-content: center; }
+.modal-card button { padding: 10px 24px; border-radius: 8px; border: none; font-weight: 600; font-size: .9rem; cursor: pointer; transition: background .15s; }
+.modal-card .btn-si { background: #10b981; color: #fff; }
+.modal-card .btn-si:hover { background: #059669; }
+.modal-card .btn-no { background: #e5e7eb; color: #475569; }
+.modal-card .btn-no:hover { background: #d1d5db; }
+.modal-card .btn-ok { background: #6366f1; color: #fff; min-width: 100px; }
+.modal-card .btn-ok:hover { background: #4f46e5; }
 </style>
 </head>
 <body>
@@ -120,6 +132,12 @@ tr:hover { background: #f8fafc; }
   </div>
 </div>
 <div id="toast" class="toast"></div>
+<div class="modal-overlay" id="modal">
+  <div class="modal-card">
+    <p id="modal-msg"></p>
+    <div class="botones" id="modal-botones"></div>
+  </div>
+</div>
 <script>
 function cargar() {
   const q = document.getElementById('buscar-input').value.trim();
@@ -161,6 +179,26 @@ function toast(msg) {
   el.classList.add('show');
   setTimeout(() => el.classList.remove('show'), 3000);
 }
+function mostrarModal(msg) {
+  const modal = document.getElementById('modal');
+  document.getElementById('modal-msg').textContent = msg;
+  document.getElementById('modal-botones').innerHTML = '<button class="btn-ok" onclick="cerrarModal()">Aceptar</button>';
+  modal.classList.add('show');
+}
+function cerrarModal() {
+  document.getElementById('modal').classList.remove('show');
+}
+function confirmarModal(msg) {
+  return new Promise(resolve => {
+    const modal = document.getElementById('modal');
+    document.getElementById('modal-msg').textContent = msg;
+    document.getElementById('modal-botones').innerHTML =
+      '<button class="btn-si" onclick="cerrarModal(); resolveConfirm(true)">Sí</button>' +
+      '<button class="btn-no" onclick="cerrarModal(); resolveConfirm(false)">No</button>';
+    modal.classList.add('show');
+    window.resolveConfirm = resolve;
+  });
+}
 function _fetch(url, opts, btn) {
   if (btn) btn.disabled = true;
   return fetch(url, opts).then(r=>r.json()).finally(() => { if(btn) btn.disabled = false; });
@@ -168,47 +206,51 @@ function _fetch(url, opts, btn) {
 function registrar(btn) {
   const dorsal = document.getElementById('dorsal-input').value.trim();
   const nombre = document.getElementById('nombre-input').value.trim();
-  if (!dorsal || !nombre) return alert('Completa dorsal y nombre.');
+  if (!dorsal || !nombre) return mostrarModal('Completa dorsal y nombre.');
   _fetch('/api/registrar', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({dorsal, nombre}) }, btn)
-    .then(d=> { if(d.error) alert(d.error); else { document.getElementById('dorsal-input').value=''; document.getElementById('nombre-input').value=''; toast('Corredor registrado'); cargar(); } });
+    .then(d=> { if(d.error) mostrarModal(d.error); else { document.getElementById('dorsal-input').value=''; document.getElementById('nombre-input').value=''; toast('Corredor registrado'); cargar(); } });
 }
 function iniciar() {
   const btn = document.getElementById('btn-iniciar');
   btn.disabled = true;
-  _fetch('/api/iniciar', {method:'POST'}, btn).then(d=> { if(d.error) alert(d.error); else { toast('Carrera iniciada'); cargar(); } });
+  _fetch('/api/iniciar', {method:'POST'}, btn).then(d=> { if(d.error) mostrarModal(d.error); else { toast('Carrera iniciada'); cargar(); } });
 }
 function llegada(btn) {
   const dorsal = document.getElementById('llegada-input').value.trim();
-  if (!dorsal) return alert('Ingresa un dorsal.');
+  if (!dorsal) return mostrarModal('Ingresa un dorsal.');
   _fetch('/api/llegada', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({dorsal})}, btn)
-    .then(d=> { if(d.error) alert(d.error); else { document.getElementById('llegada-input').value=''; cargar(); if(d.mensaje) toast(d.mensaje); } });
+    .then(d=> { if(d.error) mostrarModal(d.error); else { document.getElementById('llegada-input').value=''; cargar(); if(d.mensaje) toast(d.mensaje); } });
 }
 function finalizar() {
-  if (!confirm('¿Finalizar la carrera?')) return;
-  fetch('/api/finalizar', {method:'POST'}).then(r=>r.json()).then(d=> { if(d.error) alert(d.error); else toast('Carrera finalizada'); cargar(); });
+  confirmarModal('¿Finalizar la carrera?').then(r => {
+    if (!r) return;
+    fetch('/api/finalizar', {method:'POST'}).then(r=>r.json()).then(d=> { if(d.error) mostrarModal(d.error); else toast('Carrera finalizada'); cargar(); });
+  });
 }
 function resultados() {
   fetch('/api/resultados').then(r=>r.json()).then(d=> {
-    if(d.error) return alert(d.error);
-    let txt = 'RESULTADOS\\n' + '='.repeat(30) + '\\n';
-    d.llegados.forEach(c => { txt += '#' + c.pos + '  ' + c.dorsal + '  ' + c.nombre + '  ' + c.tiempo + '\\n'; });
-    alert(txt);
+    if(d.error) return mostrarModal(d.error);
+    let txt = 'RESULTADOS\n' + '='.repeat(30) + '\n';
+    d.llegados.forEach(c => { txt += '#' + c.pos + '  ' + c.dorsal + '  ' + c.nombre + '  ' + c.tiempo + '\n'; });
+    mostrarModal(txt);
   });
 }
 function reporte() {
   window.location.href = '/api/reporte';
 }
 function borrar(dorsal) {
-  if (!confirm('¿Borrar corredor dorsal ' + dorsal + '?')) return;
-  fetch('/api/borrar', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({dorsal}) })
-    .then(r=>r.json()).then(d=> { if(d.error) alert(d.error); else toast('Corredor eliminado'); cargar(); });
+  confirmarModal('¿Borrar corredor dorsal ' + dorsal + '?').then(r => {
+    if (!r) return;
+    fetch('/api/borrar', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({dorsal}) })
+      .then(r=>r.json()).then(d=> { if(d.error) mostrarModal(d.error); else toast('Corredor eliminado'); cargar(); });
+  });
 }
 function importarExcel(file) {
   if (!file) return;
   const form = new FormData();
   form.append('excel', file);
   fetch('/api/importar_excel', { method:'POST', body: form })
-    .then(r=>r.json()).then(d=> { if(d.error) alert(d.error); else toast(d.mensaje); cargar(); });
+    .then(r=>r.json()).then(d=> { if(d.error) mostrarModal(d.error); else toast(d.mensaje); cargar(); });
 }
 cargar();
 </script>
