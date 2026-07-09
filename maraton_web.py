@@ -80,6 +80,8 @@ th { background: #f1f5f9; font-weight: 700; color: #475569; position: sticky; to
 tr:hover { background: #f8fafc; }
 .tabla-wrap { max-height: 500px; overflow-y: auto; border-radius: 8px; border: 1px solid #e5e7eb; }
 .contador { font-size: .85rem; color: #64748b; margin-bottom: 8px; }
+.toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #1e293b; color: #fff; padding: 14px 24px; border-radius: 10px; font-weight: 600; font-size: .95rem; box-shadow: 0 8px 30px rgba(0,0,0,.25); z-index: 999; opacity: 0; transition: opacity .3s, transform .3s; pointer-events: none; }
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 </style>
 </head>
 <body>
@@ -116,6 +118,7 @@ tr:hover { background: #f8fafc; }
     </table>
   </div>
 </div>
+<div id="toast" class="toast"></div>
 <script>
 function cargar() {
   const q = document.getElementById('buscar-input').value.trim();
@@ -143,6 +146,12 @@ function cargar() {
     }
   });
 }
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 3000);
+}
 function _fetch(url, opts, btn) {
   if (btn) btn.disabled = true;
   return fetch(url, opts).then(r=>r.json()).finally(() => { if(btn) btn.disabled = false; });
@@ -152,18 +161,18 @@ function registrar(btn) {
   const nombre = document.getElementById('nombre-input').value.trim();
   if (!dorsal || !nombre) return alert('Completa dorsal y nombre.');
   _fetch('/api/registrar', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({dorsal, nombre}) }, btn)
-    .then(d=> { if(d.error) alert(d.error); else { document.getElementById('dorsal-input').value=''; document.getElementById('nombre-input').value=''; cargar(); } });
+    .then(d=> { if(d.error) alert(d.error); else { document.getElementById('dorsal-input').value=''; document.getElementById('nombre-input').value=''; toast('Corredor registrado'); cargar(); } });
 }
 function iniciar() {
   const btn = document.getElementById('btn-iniciar');
   btn.disabled = true;
-  _fetch('/api/iniciar', {method:'POST'}, btn).then(d=> { if(d.error) alert(d.error); cargar(); });
+  _fetch('/api/iniciar', {method:'POST'}, btn).then(d=> { if(d.error) alert(d.error); else { toast('Carrera iniciada'); cargar(); } });
 }
 function llegada(btn) {
   const dorsal = document.getElementById('llegada-input').value.trim();
   if (!dorsal) return alert('Ingresa un dorsal.');
   _fetch('/api/llegada', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({dorsal})}, btn)
-    .then(d=> { if(d.error) alert(d.error); else { document.getElementById('llegada-input').value=''; cargar(); if(d.mensaje) alert(d.mensaje); } });
+    .then(d=> { if(d.error) alert(d.error); else { document.getElementById('llegada-input').value=''; cargar(); if(d.mensaje) toast(d.mensaje); } });
 }
 function resultados() {
   fetch('/api/resultados').then(r=>r.json()).then(d=> {
@@ -179,14 +188,14 @@ function reporte() {
 function borrar(dorsal) {
   if (!confirm('¿Borrar corredor dorsal ' + dorsal + '?')) return;
   fetch('/api/borrar', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({dorsal}) })
-    .then(r=>r.json()).then(d=> { if(d.error) alert(d.error); cargar(); });
+    .then(r=>r.json()).then(d=> { if(d.error) alert(d.error); else toast('Corredor eliminado'); cargar(); });
 }
 function importarExcel(file) {
   if (!file) return;
   const form = new FormData();
   form.append('excel', file);
   fetch('/api/importar_excel', { method:'POST', body: form })
-    .then(r=>r.json()).then(d=> { if(d.error) alert(d.error); else alert(d.mensaje); cargar(); });
+    .then(r=>r.json()).then(d=> { if(d.error) alert(d.error); else toast(d.mensaje); cargar(); });
 }
 cargar();
 </script>
