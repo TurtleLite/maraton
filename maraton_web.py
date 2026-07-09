@@ -39,7 +39,7 @@ def init_db():
     cur.close()
     conn.close()
 
-init_db()
+# init_db() se llama en el primer request
 
 LOGO_IZQ = "/static/BURROTON 2026.png"
 LOGO_DER = "/static/LOGO SAN BENITO JOSE.jpg"
@@ -125,6 +125,7 @@ function cargar() {
       const llegada = c.tiempo_llegada || '\u2014';
       const pos = c.posicion ? '#' + c.posicion : '\u2014';
       tr.innerHTML = '<td>' + c.dorsal + '</td><td>' + c.nombre + '</td><td>' + llegada + '</td><td>' + pos + '</td>';
+    init_db()
       tbody.appendChild(tr);
     });
     document.getElementById('contador').textContent = 'Total: ' + (d.corredores||[]).length + ' corredores';
