@@ -469,7 +469,7 @@ def api_importar_excel():
             if "nombre" in h_lower or "corredor" in h_lower:
                 col_nombre = i
         if col_dorsal is None or col_nombre is None:
-            return jsonify(error="No se encontraron columnas 'Dorsal' y 'Nombre'."), 400
+            return jsonify(error="No se encontraron columnas 'Número' y 'Nombre'."), 400
         conn = get_db()
         if not conn:
             return jsonify(error="Base de datos no disponible"), 503
