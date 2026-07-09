@@ -1,4 +1,6 @@
-maraton.json
-__pycache__/
-*.pyc
-.env
+/*
+!/maraton_web.py
+!/requirements.txt
+!/static/
+!/static/*
+!/.gitignore
