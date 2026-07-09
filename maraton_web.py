@@ -3,59 +3,11 @@ import os
 import psycopg2
 import psycopg2.extras
 from datetime import datetime
-from flask import Flask, request, jsonify, render_template_string, send_file, session, redirect
-from functools import wraps
+from flask import Flask, request, jsonify, render_template_string, send_file
 import openpyxl
 
 app = Flask(__name__)
-app.secret_key = os.environ.get("SECRET_KEY", "burroton2026")
 app.static_folder = "static"
-
-LOGIN_USER = os.environ.get("LOGIN_USER", "admin")
-LOGIN_PASS = os.environ.get("LOGIN_PASS", "burroton2026")
-
-def login_required(f):
-    @wraps(f)
-    def wrapper(*args, **kwargs):
-        if "user" not in session:
-            if request.path.startswith("/api/"):
-                return jsonify(error="Acceso no autorizado"), 401
-            return redirect("/login")
-        return f(*args, **kwargs)
-    return wrapper
-
-LOGIN_HTML = """<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Burrotón San Benito José — Acceso</title>
-<style>
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f0f2f5; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
-.login-card { background: #fff; border-radius: 12px; padding: 40px 36px; width: 360px; max-width: 90%; box-shadow: 0 1px 3px rgba(0,0,0,.08); border: 1px solid #e8ecf0; text-align: center; }
-.login-card h1 { font-size: 1.3rem; color: #1a1a2e; margin-bottom: 6px; }
-.login-card p { font-size: .85rem; color: #64748b; margin-bottom: 24px; }
-.login-card input { width: 100%; padding: 10px 14px; font-size: .875rem; border-radius: 6px; border: 1px solid #d4d8dd; outline: none; font-family: inherit; margin-bottom: 12px; background: #f8f9fa; transition: background .15s, border-color .15s; }
-.login-card input:focus { border-color: #2563eb; background: #fff; box-shadow: 0 0 0 2px rgba(37,99,235,.12); }
-.login-card button { width: 100%; padding: 10px; font-size: .875rem; border-radius: 6px; border: none; background: #2563eb; color: #fff; font-weight: 500; cursor: pointer; font-family: inherit; }
-.login-card button:hover { background: #1d4ed8; }
-.login-card .error { color: #dc2626; font-size: .8rem; margin-bottom: 12px; }
-</style>
-</head>
-<body>
-<div class="login-card">
-  <h1>Burrotón San Benito José</h1>
-  <p>Ingresa tus credenciales</p>
-  {% if error %}<div class="error">{{ error }}</div>{% endif %}
-  <form method="POST">
-    <input type="text" name="user" placeholder="Usuario" required autocomplete="username">
-    <input type="password" name="pass" placeholder="Contraseña" required autocomplete="current-password">
-    <button type="submit">Ingresar</button>
-  </form>
-</div>
-</body>
-</html>"""
 
 DB_URL = os.environ.get("DATABASE_URL", "postgresql://maraton_db_yu80_user:PGKNIB3F5HTynSqz7Vx6x01vJcQVG3bD@dpg-d97vq9qabeoc739aqnmg-a.virginia-postgres.render.com/maraton_db_yu80?sslmode=require")
 
@@ -96,83 +48,66 @@ HTML = """<!DOCTYPE html>
 <title>Burrotón San Benito José</title>
 <link rel="icon" href="/static/BURROTON 2026.png">
 <style>
-:root { --bg: #f0f2f5; --surface: #fff; --border: #e8ecf0; --text: #1a1a2e; --text2: #475569; --text3: #64748b; --input-bg: #f8f9fa; --input-border: #d4d8dd; --primary: #2563eb; --primary-hover: #1d4ed8; --primary-active: #1e40af; --green: #059669; --green-hover: #047857; --red: #dc2626; --red-hover: #b91c1c; --row-hover: #f8f9fa; --row-alt: #fafbfc; --shadow: 0 1px 3px rgba(0,0,0,.08); --shadow-lg: 0 8px 40px rgba(0,0,0,.18); --toast-bg: #1e293b; --toast-text: #f1f5f9; --modal-overlay: rgba(0,0,0,.35); }
-.dark { --bg: #0f172a; --surface: #1e293b; --border: #334155; --text: #f1f5f9; --text2: #94a3b8; --text3: #64748b; --input-bg: #1e293b; --input-border: #475569; --primary: #3b82f6; --primary-hover: #2563eb; --primary-active: #1d4ed8; --green: #10b981; --green-hover: #059669; --red: #ef4444; --red-hover: #dc2626; --row-hover: #334155; --row-alt: #293548; --shadow: 0 1px 3px rgba(0,0,0,.2); --shadow-lg: 0 8px 40px rgba(0,0,0,.4); --toast-bg: #0f172a; --toast-text: #e2e8f0; --modal-overlay: rgba(0,0,0,.6); }
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif; background: var(--bg); min-height: 100vh; padding: 30px 20px; color: var(--text); transition: background .3s, color .3s; }
-.container { max-width: 960px; margin: 0 auto; background: var(--surface); border-radius: 12px; padding: 32px; box-shadow: var(--shadow), 0 1px 2px rgba(0,0,0,.04); border: 1px solid var(--border); transition: background .3s, border-color .3s, box-shadow .3s; animation: fadeUp .4s ease-out; }
-@keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif; background: #f0f2f5; min-height: 100vh; padding: 30px 20px; color: #1a1a2e; transition: background .3s, color .3s; }
+.container { max-width: 960px; margin: 0 auto; background: #fff; border-radius: 12px; padding: 32px; box-shadow: 0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.04); border: 1px solid #e8ecf0; animation: fadeUp .45s ease-out; }
 .header { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-bottom: 24px; }
-.header img { height: 90px; width: auto; object-fit: contain; transition: opacity .3s; }
-.dark .header img { opacity: .85; }
-.header h1 { font-size: 1.5rem; color: var(--text); text-align: center; flex: 1; font-weight: 700; letter-spacing: -.02em; transition: color .3s; }
-.theme-btn { position: fixed; top: 14px; right: 14px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 7px 11px; cursor: pointer; font-size: 1.1rem; color: var(--text2); transition: background .2s, color .2s, border-color .2s, transform .2s, box-shadow .2s; z-index: 100; box-shadow: var(--shadow); }
-.theme-btn:hover { background: var(--row-hover); color: var(--text); transform: rotate(15deg) scale(1.05); box-shadow: var(--shadow), 0 2px 8px rgba(0,0,0,.1); }
+.header img { height: 90px; width: auto; object-fit: contain; }
+.header h1 { font-size: 1.5rem; color: #1a1a2e; text-align: center; flex: 1; font-weight: 700; letter-spacing: -.02em; }
 .barra { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
-.barra button, .barra input { padding: 8px 14px; font-size: .875rem; border-radius: 6px; border: 1px solid var(--input-border); outline: none; font-family: inherit; transition: background .2s, border-color .2s, box-shadow .2s, color .2s; }
-.barra input:focus { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(37,99,235,.12); }
-.barra button { background: var(--primary); color: #fff; border: none; cursor: pointer; font-weight: 500; transition: background .2s, box-shadow .2s, transform .1s; }
-.barra button:hover { background: var(--primary-hover); box-shadow: 0 2px 8px rgba(37,99,235,.25); }
-.barra button:active { transform: scale(.97); }
-.barra button:disabled { opacity: .4; cursor: not-allowed; box-shadow: none; transform: none; }
-.barra button.verde { background: var(--green); }
-.barra button.verde:hover { background: var(--green-hover); }
-.barra button.rojo { background: var(--red); }
-.barra button.rojo:hover { background: var(--red-hover); }
-.barra input { flex: 1; min-width: 100px; background: var(--input-bg); color: var(--text); }
-.barra input:focus { background: var(--surface); }
-.estado { padding: 8px 16px; border-radius: 6px; margin-bottom: 20px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; font-size: .875rem; border: 1px solid; transition: background .3s, color .3s, border-color .3s; }
+.barra button, .barra input { padding: 8px 14px; font-size: .875rem; border-radius: 6px; border: 1px solid #d4d8dd; outline: none; font-family: inherit; }
+.barra input:focus { border-color: #2563eb; box-shadow: 0 0 0 2px rgba(37,99,235,.12); }
+.barra button { background: #2563eb; color: #fff; border: none; cursor: pointer; font-weight: 500; transition: background .15s, box-shadow .15s; }
+.barra button:hover { background: #1d4ed8; box-shadow: 0 1px 3px rgba(37,99,235,.25); }
+.barra button:active { background: #1e40af; transform: scale(.97); }
+.barra button:disabled { opacity: .4; cursor: not-allowed; box-shadow: none; }
+.barra button.verde { background: #059669; }
+.barra button.verde:hover { background: #047857; box-shadow: 0 1px 3px rgba(5,150,105,.25); }
+.barra button.verde:active { background: #065f46; transform: scale(.97); }
+.barra button.rojo { background: #dc2626; }
+.barra button.rojo:hover { background: #b91c1c; box-shadow: 0 1px 3px rgba(220,38,38,.25); }
+.barra button.rojo:active { background: #991b1b; transform: scale(.97); }
+.barra input { flex: 1; min-width: 100px; background: #f8f9fa; transition: background .15s, border-color .15s, box-shadow .15s; }
+.barra input:focus { background: #fff; }
+.estado { padding: 8px 16px; border-radius: 6px; margin-bottom: 20px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; font-size: .875rem; border: 1px solid; }
 .estado.parada { background: #fffbeb; color: #92400e; border-color: #fde68a; }
-.dark .estado.parada { background: #422006; color: #fde68a; border-color: #78350f; }
 .estado.andando { background: #f0fdf4; color: #065f46; border-color: #a7f3d0; }
-.dark .estado.andando { background: #052e16; color: #a7f3d0; border-color: #166534; }
-.estado.andando .pulse { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #059669; animation: pulse 1.5s ease-in-out infinite; }
-.dark .estado.andando .pulse { background: #10b981; }
-@keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: .5; transform: scale(.75); } }
-.separador { height: 1px; background: var(--border); margin: 20px 0; transition: background .3s; }
+.separador { height: 1px; background: #e8ecf0; margin: 20px 0; }
 .buscar-wrap { margin-bottom: 12px; }
-.buscar-wrap input { width: 100%; padding: 10px 14px; font-size: .875rem; border-radius: 6px; border: 1px solid var(--input-border); outline: none; font-family: inherit; background: var(--input-bg); color: var(--text); transition: background .2s, border-color .2s, box-shadow .2s, color .2s; }
-.buscar-wrap input:focus { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(37,99,235,.12); background: var(--surface); }
+.buscar-wrap input { width: 100%; padding: 10px 14px; font-size: .875rem; border-radius: 6px; border: 1px solid #d4d8dd; outline: none; font-family: inherit; background: #f8f9fa; transition: background .15s, border-color .15s, box-shadow .15s; }
+.buscar-wrap input:focus { border-color: #2563eb; box-shadow: 0 0 0 2px rgba(37,99,235,.12); background: #fff; }
 table { width: 100%; border-collapse: collapse; font-size: .85rem; }
-th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border); transition: background .2s, border-color .3s, color .3s; }
-th { background: var(--row-hover); font-weight: 600; color: var(--text2); position: sticky; top: 0; font-size: .8rem; text-transform: uppercase; letter-spacing: .03em; }
+th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #e8ecf0; }
+th { background: #f8f9fa; font-weight: 600; color: #475569; position: sticky; top: 0; font-size: .8rem; text-transform: uppercase; letter-spacing: .03em; }
 tr:last-child td { border-bottom: none; }
-tbody tr { animation: rowIn .3s ease-out both; }
-@keyframes rowIn { from { opacity: 0; transform: translateX(-8px); } to { opacity: 1; transform: translateX(0); } }
-tbody tr:nth-child(1) { animation-delay: 0s; }
-tbody tr:nth-child(2) { animation-delay: .03s; }
-tbody tr:nth-child(3) { animation-delay: .06s; }
-tbody tr:nth-child(4) { animation-delay: .09s; }
-tbody tr:nth-child(5) { animation-delay: .12s; }
-tbody tr:nth-child(6) { animation-delay: .15s; }
-tbody tr:nth-child(n+7) { animation-delay: .18s; }
-tr:hover td { background: var(--row-hover); }
-tbody tr:nth-child(even) td { background: var(--row-alt); }
-tbody tr:nth-child(even):hover td { background: var(--row-hover); }
-td button { transition: background .15s, transform .1s; }
+tr:hover td { background: #f8f9fa; }
+tbody tr:nth-child(even) td { background: #fafbfc; }
+tbody tr:nth-child(even):hover td { background: #f1f3f5; }
+td button { transition: background .15s, transform .15s; }
 td button:active { transform: scale(.9); }
-.tabla-wrap { max-height: 500px; overflow-y: auto; border-radius: 8px; border: 1px solid var(--border); transition: border-color .3s; }
-.contador { font-size: .8rem; color: var(--text3); margin-bottom: 10px; transition: color .3s; }
-.toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(10px); background: var(--toast-bg); color: var(--toast-text); padding: 12px 24px; border-radius: 8px; font-weight: 500; font-size: .875rem; box-shadow: 0 4px 16px rgba(0,0,0,.2); z-index: 999; opacity: 0; transition: opacity .25s, transform .25s; pointer-events: none; }
+.tabla-wrap { max-height: 500px; overflow-y: auto; border-radius: 8px; border: 1px solid #e8ecf0; }
+.contador { font-size: .8rem; color: #64748b; margin-bottom: 10px; }
+.toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(10px); background: #1e293b; color: #f1f5f9; padding: 12px 24px; border-radius: 8px; font-weight: 500; font-size: .875rem; box-shadow: 0 4px 16px rgba(0,0,0,.2); z-index: 999; opacity: 0; transition: opacity .25s, transform .25s; pointer-events: none; }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-.footer { position: fixed; bottom: 12px; left: 0; right: 0; display: flex; justify-content: space-between; padding: 0 24px; font-size: .65rem; color: var(--text3); pointer-events: none; z-index: 0; letter-spacing: .04em; transition: color .3s; }
-.footer a { pointer-events: auto; }
-.modal-overlay { position: fixed; inset: 0; background: var(--modal-overlay); display: flex; align-items: center; justify-content: center; z-index: 1000; opacity: 0; transition: opacity .2s; pointer-events: none; }
+.footer { position: fixed; bottom: 12px; left: 0; right: 0; display: flex; justify-content: space-between; padding: 0 24px; font-size: .65rem; color: rgba(0,0,0,.25); pointer-events: none; z-index: 0; letter-spacing: .04em; }
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.35); display: flex; align-items: center; justify-content: center; z-index: 1000; opacity: 0; transition: opacity .2s; pointer-events: none; }
 .modal-overlay.show { opacity: 1; pointer-events: auto; }
-.modal-card { background: var(--surface); border-radius: 12px; padding: 28px 32px; max-width: 420px; width: 90%; box-shadow: var(--shadow-lg); text-align: center; transition: background .3s; animation: modalIn .25s ease-out; }
-@keyframes modalIn { from { opacity: 0; transform: scale(.92) translateY(8px); } to { opacity: 1; transform: scale(1) translateY(0); } }
-.modal-card p { font-size: .95rem; color: var(--text); margin-bottom: 22px; line-height: 1.55; white-space: pre-wrap; transition: color .3s; }
+.modal-card { background: #fff; border-radius: 12px; padding: 28px 32px; max-width: 420px; width: 90%; box-shadow: 0 8px 40px rgba(0,0,0,.18); text-align: center; }
+.modal-card p { font-size: .95rem; color: #1a1a2e; margin-bottom: 22px; line-height: 1.55; white-space: pre-wrap; }
+.modal-overlay.show .modal-card { animation: modalIn .25s ease-out; }
 .modal-card .botones { display: flex; gap: 10px; justify-content: center; }
-.modal-card button { padding: 9px 22px; border-radius: 6px; border: none; font-weight: 500; font-size: .875rem; cursor: pointer; transition: background .15s, transform .1s; font-family: inherit; }
-.modal-card button:active { transform: scale(.97); }
-.modal-card .btn-si { background: var(--green); color: #fff; }
-.modal-card .btn-si:hover { background: var(--green-hover); }
+.modal-card button { padding: 9px 22px; border-radius: 6px; border: none; font-weight: 500; font-size: .875rem; cursor: pointer; transition: background .15s; font-family: inherit; }
+.modal-card .btn-si { background: #059669; color: #fff; }
+.modal-card .btn-si:hover { background: #047857; }
 .modal-card .btn-no { background: #e5e7eb; color: #475569; }
-.dark .modal-card .btn-no { background: #475569; color: #e2e8f0; }
 .modal-card .btn-no:hover { background: #d1d5db; }
-.dark .modal-card .btn-no:hover { background: #64748b; }
-.modal-card .btn-ok { background: var(--primary); color: #fff; min-width: 100px; }
-.modal-card .btn-ok:hover { background: var(--primary-hover); }
+.modal-card .btn-ok { background: #2563eb; color: #fff; min-width: 100px; }
+.modal-card .btn-ok:hover { background: #1d4ed8; }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes rowIn { from { opacity: 0; transform: translateX(-12px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .4; } }
+@keyframes modalIn { from { opacity: 0; transform: scale(.92); } to { opacity: 1; transform: scale(1); } }
+.estado.andando::before { content: ''; display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #059669; animation: pulse 1.8s ease-in-out infinite; margin-right: 4px; }
 @media (max-width: 600px) {
   .container { padding: 20px; }
   .header h1 { font-size: 1.1rem; }
@@ -188,7 +123,7 @@ td button:active { transform: scale(.9); }
     <h1>Burrotón San Benito José</h1>
     <img src="{{ logo_der }}" alt="Logo">
   </div>
-  <div id="estado-carrera" class="estado parada"><span class="pulse"></span>⏸ Carrera no iniciada</div>
+  <div id="estado-carrera" class="estado parada">⏸ Carrera no iniciada</div>
   <div class="barra">
     <input id="dorsal-input" placeholder="Número" size="6">
     <input id="nombre-input" placeholder="Nombre del corredor">
@@ -216,7 +151,6 @@ td button:active { transform: scale(.9); }
     </table>
   </div>
 </div>
-<button class="theme-btn" id="theme-btn" onclick="toggleTheme()" title="Modo oscuro">🌙</button>
 <div class="footer"><span>FIXTLE</span><span>TURTLELITE</span></div>
 <div id="toast" class="toast"></div>
 <div class="modal-overlay" id="modal">
@@ -234,7 +168,8 @@ function cargar() {
     tbody.innerHTML = '';
     (d.corredores||[]).forEach((c, i) => {
       const tr = document.createElement('tr');
-      tr.style.animationDelay = (i * 0.03) + 's';
+      tr.style.animation = 'rowIn .35s ease-out both';
+      tr.style.animationDelay = (i * 0.035) + 's';
       const llegada = c.tiempo_llegada || '—';
       const pos = c.posicion ? '#' + c.posicion : '—';
       tr.innerHTML = '<td>' + c.dorsal + '</td><td>' + c.nombre + '</td><td>' + llegada + '</td><td>' + pos + '</td><td></td>';
@@ -249,12 +184,12 @@ function cargar() {
     document.getElementById('contador').textContent = 'Total: ' + (d.corredores||[]).length + ' corredores';
     const est = document.getElementById('estado-carrera');
     if (d.carrera_iniciada) {
-      est.innerHTML = '<span class="pulse"></span>🏁 Carrera en curso — Salida: ' + d.hora_inicio;
+      est.textContent = '🏁 Carrera en curso — Salida: ' + d.hora_inicio;
       est.className = 'estado andando';
       document.getElementById('btn-iniciar').disabled = true;
       document.getElementById('btn-finalizar').style.display = '';
     } else {
-      est.innerHTML = '<span class="pulse"></span>⏸ Carrera no iniciada';
+      est.textContent = '⏸ Carrera no iniciada';
       est.className = 'estado parada';
       document.getElementById('btn-iniciar').disabled = false;
       document.getElementById('btn-finalizar').style.display = 'none';
@@ -340,46 +275,16 @@ function importarExcel(file) {
   fetch('/api/importar_excel', { method:'POST', body: form })
     .then(r=>r.json()).then(d=> { if(d.error) mostrarModal(d.error); else toast(d.mensaje); cargar(); });
 }
-function toggleTheme() {
-  document.body.classList.toggle('dark');
-  const btn = document.getElementById('theme-btn');
-  btn.textContent = document.body.classList.contains('dark') ? '☀️' : '🌙';
-  localStorage.setItem('theme', document.body.classList.contains('dark') ? 'dark' : 'light');
-}
-(function() {
-  if (localStorage.getItem('theme') === 'dark') {
-    document.body.classList.add('dark');
-    document.getElementById('theme-btn').textContent = '☀️';
-  }
-})();
 cargar();
 </script>
 </body>
 </html>"""
 
-@app.route("/login", methods=["GET", "POST"])
-def login():
-    if request.method == "POST":
-        user = request.form.get("user", "").strip()
-        passw = request.form.get("pass", "").strip()
-        if user == LOGIN_USER and passw == LOGIN_PASS:
-            session["user"] = user
-            return redirect("/")
-        return render_template_string(LOGIN_HTML, error="Usuario o contraseña incorrectos.")
-    return render_template_string(LOGIN_HTML, error=None)
-
-@app.route("/logout")
-def logout():
-    session.pop("user", None)
-    return redirect("/login")
-
 @app.route("/")
-@login_required
 def index():
     return render_template_string(HTML, logo_izq=LOGO_IZQ, logo_der=LOGO_DER)
 
 @app.route("/api/datos")
-@login_required
 def api_datos():
     init_db()
     conn = get_db()
@@ -402,7 +307,6 @@ def api_datos():
         return jsonify(carrera_iniciada=False, hora_inicio=None, corredores=[])
 
 @app.route("/api/buscar")
-@login_required
 def api_buscar():
     init_db()
     q = request.args.get("q", "").strip()
@@ -426,7 +330,6 @@ def api_buscar():
         return jsonify(carrera_iniciada=False, hora_inicio=None, corredores=[])
 
 @app.route("/api/registrar", methods=["POST"])
-@login_required
 def api_registrar():
     init_db()
     dorsal = request.json.get("dorsal", "").strip()
@@ -450,7 +353,6 @@ def api_registrar():
         return jsonify(error="Error al registrar"), 500
 
 @app.route("/api/iniciar", methods=["POST"])
-@login_required
 def api_iniciar():
     init_db()
     conn = get_db()
@@ -475,7 +377,6 @@ def api_iniciar():
         return jsonify(error="Error al iniciar carrera"), 500
 
 @app.route("/api/llegada", methods=["POST"])
-@login_required
 def api_llegada():
     init_db()
     dorsal = request.json.get("dorsal", "").strip()
@@ -517,7 +418,6 @@ def api_llegada():
         return jsonify(error="Error al registrar llegada"), 500
 
 @app.route("/api/resultados")
-@login_required
 def api_resultados():
     init_db()
     conn = get_db()
@@ -551,7 +451,6 @@ def api_resultados():
         return jsonify(error="Error al obtener resultados"), 500
 
 @app.route("/api/finalizar", methods=["POST"])
-@login_required
 def api_finalizar():
     init_db()
     conn = get_db()
@@ -574,7 +473,6 @@ def api_finalizar():
         return jsonify(error="Error al finalizar carrera"), 500
 
 @app.route("/api/importar_excel", methods=["POST"])
-@login_required
 def api_importar_excel():
     init_db()
     if "excel" not in request.files:
@@ -619,7 +517,6 @@ def api_importar_excel():
         return jsonify(error="Error al procesar el Excel"), 500
 
 @app.route("/api/borrar", methods=["POST"])
-@login_required
 def api_borrar():
     init_db()
     dorsal = request.json.get("dorsal", "").strip()
@@ -640,7 +537,6 @@ def api_borrar():
         return jsonify(error="Error al borrar"), 500
 
 @app.route("/api/reporte")
-@login_required
 def api_reporte():
     init_db()
     conn = get_db()
