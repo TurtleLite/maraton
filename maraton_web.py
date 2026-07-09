@@ -56,12 +56,14 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: linear-gradie
 .barra { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
 .barra button, .barra input { padding: 10px 16px; font-size: .95rem; border-radius: 8px; border: 1px solid #d1d5db; outline: none; }
 .barra input:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,.15); }
-.barra button { background: #6366f1; color: #fff; border: none; cursor: pointer; font-weight: 600; transition: background .15s; }
-.barra button:hover { background: #4f46e5; }
+.barra button { background: #6366f1; color: #fff; border: none; cursor: pointer; font-weight: 600; transition: background .15s, transform .1s, box-shadow .15s; }
+.barra button:hover { background: #4f46e5; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(99,102,241,.3); }
+.barra button:active { transform: translateY(1px); box-shadow: none; }
+.barra button:disabled { opacity: .5; cursor: not-allowed; transform: none; box-shadow: none; }
 .barra button.verde { background: #10b981; }
-.barra button.verde:hover { background: #059669; }
+.barra button.verde:hover { background: #059669; box-shadow: 0 4px 12px rgba(16,185,129,.3); }
 .barra button.rojo { background: #ef4444; }
-.barra button.rojo:hover { background: #dc2626; }
+.barra button.rojo:hover { background: #dc2626; box-shadow: 0 4px 12px rgba(239,68,68,.3); }
 .barra input { flex: 1; min-width: 100px; }
 .estado { padding: 10px 18px; border-radius: 8px; margin-bottom: 16px; font-weight: 700; display: inline-block; font-size: .95rem; }
 .estado.parada { background: #fef3c7; color: #92400e; }
@@ -72,6 +74,8 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: linear-gradie
 .buscar-wrap input:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,.15); }
 table { width: 100%; border-collapse: collapse; font-size: .9rem; }
 th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #e5e7eb; }
+td button { transition: background .15s, transform .1s; }
+td button:active { transform: translateY(1px); }
 th { background: #f1f5f9; font-weight: 700; color: #475569; position: sticky; top: 0; }
 tr:hover { background: #f8fafc; }
 .tabla-wrap { max-height: 500px; overflow-y: auto; border-radius: 8px; border: 1px solid #e5e7eb; }
@@ -89,12 +93,12 @@ tr:hover { background: #f8fafc; }
   <div class="barra">
     <input id="dorsal-input" placeholder="Dorsal" size="6">
     <input id="nombre-input" placeholder="Nombre del corredor">
-    <button onclick="registrar()">Registrar</button>
+    <button onclick="registrar(this)">Registrar</button>
     <button id="btn-iniciar" class="verde" onclick="iniciar()">Iniciar carrera</button>
   </div>
   <div class="barra">
     <input id="llegada-input" placeholder="Dorsal del que llega">
-    <button class="verde" onclick="llegada()">Registrar llegada</button>
+    <button class="verde" onclick="llegada(this)">Registrar llegada</button>
     <button onclick="resultados()">Ver resultados</button>
     <button onclick="reporte()">Descargar reporte</button>
     <button onclick="document.getElementById('excel-input').click()">Importar Excel</button>
@@ -139,21 +143,27 @@ function cargar() {
     }
   });
 }
-function registrar() {
+function _fetch(url, opts, btn) {
+  if (btn) btn.disabled = true;
+  return fetch(url, opts).then(r=>r.json()).finally(() => { if(btn) btn.disabled = false; });
+}
+function registrar(btn) {
   const dorsal = document.getElementById('dorsal-input').value.trim();
   const nombre = document.getElementById('nombre-input').value.trim();
   if (!dorsal || !nombre) return alert('Completa dorsal y nombre.');
-  fetch('/api/registrar', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({dorsal, nombre}) })
-    .then(r=>r.json()).then(d=> { if(d.error) alert(d.error); else { document.getElementById('dorsal-input').value=''; document.getElementById('nombre-input').value=''; cargar(); } });
+  _fetch('/api/registrar', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({dorsal, nombre}) }, btn)
+    .then(d=> { if(d.error) alert(d.error); else { document.getElementById('dorsal-input').value=''; document.getElementById('nombre-input').value=''; cargar(); } });
 }
 function iniciar() {
-  fetch('/api/iniciar', {method:'POST'}).then(r=>r.json()).then(d=> { if(d.error) alert(d.error); else cargar(); });
+  const btn = document.getElementById('btn-iniciar');
+  btn.disabled = true;
+  _fetch('/api/iniciar', {method:'POST'}, btn).then(d=> { if(d.error) alert(d.error); cargar(); });
 }
-function llegada() {
+function llegada(btn) {
   const dorsal = document.getElementById('llegada-input').value.trim();
   if (!dorsal) return alert('Ingresa un dorsal.');
-  fetch('/api/llegada', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({dorsal})})
-    .then(r=>r.json()).then(d=> { if(d.error) alert(d.error); else { document.getElementById('llegada-input').value=''; cargar(); if(d.mensaje) alert(d.mensaje); } });
+  _fetch('/api/llegada', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({dorsal})}, btn)
+    .then(d=> { if(d.error) alert(d.error); else { document.getElementById('llegada-input').value=''; cargar(); if(d.mensaje) alert(d.mensaje); } });
 }
 function resultados() {
   fetch('/api/resultados').then(r=>r.json()).then(d=> {
