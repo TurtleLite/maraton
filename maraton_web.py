@@ -106,8 +106,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxyge
 .header img { height: 90px; width: auto; object-fit: contain; transition: opacity .3s; }
 .dark .header img { opacity: .85; }
 .header h1 { font-size: 1.5rem; color: var(--text); text-align: center; flex: 1; font-weight: 700; letter-spacing: -.02em; transition: color .3s; }
-.theme-btn { background: none; border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px; cursor: pointer; font-size: 1.1rem; color: var(--text2); transition: background .2s, color .2s, border-color .2s, transform .2s; flex-shrink: 0; }
-.theme-btn:hover { background: var(--row-hover); color: var(--text); transform: rotate(15deg); }
+.theme-btn { position: fixed; top: 14px; right: 14px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 7px 11px; cursor: pointer; font-size: 1.1rem; color: var(--text2); transition: background .2s, color .2s, border-color .2s, transform .2s, box-shadow .2s; z-index: 100; box-shadow: var(--shadow); }
+.theme-btn:hover { background: var(--row-hover); color: var(--text); transform: rotate(15deg) scale(1.05); box-shadow: var(--shadow), 0 2px 8px rgba(0,0,0,.1); }
 .barra { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
 .barra button, .barra input { padding: 8px 14px; font-size: .875rem; border-radius: 6px; border: 1px solid var(--input-border); outline: none; font-family: inherit; transition: background .2s, border-color .2s, box-shadow .2s, color .2s; }
 .barra input:focus { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(37,99,235,.12); }
@@ -186,7 +186,6 @@ td button:active { transform: scale(.9); }
   <div class="header">
     <img src="{{ logo_izq }}" alt="Logo">
     <h1>Burrotón San Benito José</h1>
-    <button class="theme-btn" id="theme-btn" onclick="toggleTheme()" title="Modo oscuro">🌙</button>
     <img src="{{ logo_der }}" alt="Logo">
   </div>
   <div id="estado-carrera" class="estado parada"><span class="pulse"></span>⏸ Carrera no iniciada</div>
@@ -217,6 +216,7 @@ td button:active { transform: scale(.9); }
     </table>
   </div>
 </div>
+<button class="theme-btn" id="theme-btn" onclick="toggleTheme()" title="Modo oscuro">🌙</button>
 <div class="footer"><span>FIXTLE</span><span>TURTLELITE</span></div>
 <div id="toast" class="toast"></div>
 <div class="modal-overlay" id="modal">
