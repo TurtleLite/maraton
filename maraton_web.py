@@ -230,8 +230,8 @@ function finalizar() {
 function resultados() {
   fetch('/api/resultados').then(r=>r.json()).then(d=> {
     if(d.error) return mostrarModal(d.error);
-    let txt = 'RESULTADOS\n' + '='.repeat(30) + '\n';
-    d.llegados.forEach(c => { txt += '#' + c.pos + '  ' + c.dorsal + '  ' + c.nombre + '  ' + c.tiempo + '\n'; });
+    let txt = 'RESULTADOS\\n' + '='.repeat(30) + '\\n';
+    d.llegados.forEach(c => { txt += '#' + c.pos + '  ' + c.dorsal + '  ' + c.nombre + '  ' + c.tiempo + '\\n'; });
     mostrarModal(txt);
   });
 }
