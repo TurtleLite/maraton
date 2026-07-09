@@ -82,7 +82,7 @@ tr:hover { background: #f8fafc; }
 <div class="container" id="app">
   <div class="header">
     <img src="{{ logo_izq }}" alt="Logo">
-    <h1>🏃 Maratón San Benito José</h1>
+    <h1>Maratón San Benito José</h1>
     <img src="{{ logo_der }}" alt="Logo">
   </div>
   <div id="estado-carrera" class="estado parada">⏸ Carrera no iniciada</div>
