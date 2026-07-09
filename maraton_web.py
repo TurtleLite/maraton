@@ -3,11 +3,59 @@ import os
 import psycopg2
 import psycopg2.extras
 from datetime import datetime
-from flask import Flask, request, jsonify, render_template_string, send_file
+from flask import Flask, request, jsonify, render_template_string, send_file, session, redirect
+from functools import wraps
 import openpyxl
 
 app = Flask(__name__)
+app.secret_key = os.environ.get("SECRET_KEY", "burroton2026")
 app.static_folder = "static"
+
+LOGIN_USER = os.environ.get("LOGIN_USER", "admin")
+LOGIN_PASS = os.environ.get("LOGIN_PASS", "burroton2026")
+
+def login_required(f):
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        if "user" not in session:
+            if request.path.startswith("/api/"):
+                return jsonify(error="Acceso no autorizado"), 401
+            return redirect("/login")
+        return f(*args, **kwargs)
+    return wrapper
+
+LOGIN_HTML = """<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Burrotón San Benito José — Acceso</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f0f2f5; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+.login-card { background: #fff; border-radius: 12px; padding: 40px 36px; width: 360px; max-width: 90%; box-shadow: 0 1px 3px rgba(0,0,0,.08); border: 1px solid #e8ecf0; text-align: center; }
+.login-card h1 { font-size: 1.3rem; color: #1a1a2e; margin-bottom: 6px; }
+.login-card p { font-size: .85rem; color: #64748b; margin-bottom: 24px; }
+.login-card input { width: 100%; padding: 10px 14px; font-size: .875rem; border-radius: 6px; border: 1px solid #d4d8dd; outline: none; font-family: inherit; margin-bottom: 12px; background: #f8f9fa; transition: background .15s, border-color .15s; }
+.login-card input:focus { border-color: #2563eb; background: #fff; box-shadow: 0 0 0 2px rgba(37,99,235,.12); }
+.login-card button { width: 100%; padding: 10px; font-size: .875rem; border-radius: 6px; border: none; background: #2563eb; color: #fff; font-weight: 500; cursor: pointer; font-family: inherit; }
+.login-card button:hover { background: #1d4ed8; }
+.login-card .error { color: #dc2626; font-size: .8rem; margin-bottom: 12px; }
+</style>
+</head>
+<body>
+<div class="login-card">
+  <h1>Burrotón San Benito José</h1>
+  <p>Ingresa tus credenciales</p>
+  {% if error %}<div class="error">{{ error }}</div>{% endif %}
+  <form method="POST">
+    <input type="text" name="user" placeholder="Usuario" required autocomplete="username">
+    <input type="password" name="pass" placeholder="Contraseña" required autocomplete="current-password">
+    <button type="submit">Ingresar</button>
+  </form>
+</div>
+</body>
+</html>"""
 
 DB_URL = os.environ.get("DATABASE_URL", "postgresql://maraton_db_yu80_user:PGKNIB3F5HTynSqz7Vx6x01vJcQVG3bD@dpg-d97vq9qabeoc739aqnmg-a.virginia-postgres.render.com/maraton_db_yu80?sslmode=require")
 
@@ -144,7 +192,7 @@ td button { transition: background .15s; }
     </table>
   </div>
 </div>
-<div class="footer"><span>FIXTLE</span><span>TURTLELITE</span></div>
+<div class="footer"><span>FIXTLE</span><span><a href="/logout" style="color:inherit;text-decoration:none">Cerrar sesión</a></span><span>TURTLELITE</span></div>
 <div id="toast" class="toast"></div>
 <div class="modal-overlay" id="modal">
   <div class="modal-card">
@@ -271,11 +319,29 @@ cargar();
 </body>
 </html>"""
 
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if request.method == "POST":
+        user = request.form.get("user", "").strip()
+        passw = request.form.get("pass", "").strip()
+        if user == LOGIN_USER and passw == LOGIN_PASS:
+            session["user"] = user
+            return redirect("/")
+        return render_template_string(LOGIN_HTML, error="Usuario o contraseña incorrectos.")
+    return render_template_string(LOGIN_HTML, error=None)
+
+@app.route("/logout")
+def logout():
+    session.pop("user", None)
+    return redirect("/login")
+
 @app.route("/")
+@login_required
 def index():
     return render_template_string(HTML, logo_izq=LOGO_IZQ, logo_der=LOGO_DER)
 
 @app.route("/api/datos")
+@login_required
 def api_datos():
     init_db()
     conn = get_db()
@@ -298,6 +364,7 @@ def api_datos():
         return jsonify(carrera_iniciada=False, hora_inicio=None, corredores=[])
 
 @app.route("/api/buscar")
+@login_required
 def api_buscar():
     init_db()
     q = request.args.get("q", "").strip()
@@ -321,6 +388,7 @@ def api_buscar():
         return jsonify(carrera_iniciada=False, hora_inicio=None, corredores=[])
 
 @app.route("/api/registrar", methods=["POST"])
+@login_required
 def api_registrar():
     init_db()
     dorsal = request.json.get("dorsal", "").strip()
@@ -344,6 +412,7 @@ def api_registrar():
         return jsonify(error="Error al registrar"), 500
 
 @app.route("/api/iniciar", methods=["POST"])
+@login_required
 def api_iniciar():
     init_db()
     conn = get_db()
@@ -368,6 +437,7 @@ def api_iniciar():
         return jsonify(error="Error al iniciar carrera"), 500
 
 @app.route("/api/llegada", methods=["POST"])
+@login_required
 def api_llegada():
     init_db()
     dorsal = request.json.get("dorsal", "").strip()
@@ -409,6 +479,7 @@ def api_llegada():
         return jsonify(error="Error al registrar llegada"), 500
 
 @app.route("/api/resultados")
+@login_required
 def api_resultados():
     init_db()
     conn = get_db()
@@ -442,6 +513,7 @@ def api_resultados():
         return jsonify(error="Error al obtener resultados"), 500
 
 @app.route("/api/finalizar", methods=["POST"])
+@login_required
 def api_finalizar():
     init_db()
     conn = get_db()
@@ -464,6 +536,7 @@ def api_finalizar():
         return jsonify(error="Error al finalizar carrera"), 500
 
 @app.route("/api/importar_excel", methods=["POST"])
+@login_required
 def api_importar_excel():
     init_db()
     if "excel" not in request.files:
@@ -508,6 +581,7 @@ def api_importar_excel():
         return jsonify(error="Error al procesar el Excel"), 500
 
 @app.route("/api/borrar", methods=["POST"])
+@login_required
 def api_borrar():
     init_db()
     dorsal = request.json.get("dorsal", "").strip()
@@ -528,6 +602,7 @@ def api_borrar():
         return jsonify(error="Error al borrar"), 500
 
 @app.route("/api/reporte")
+@login_required
 def api_reporte():
     init_db()
     conn = get_db()
