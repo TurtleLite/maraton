@@ -217,7 +217,7 @@ td button:active { transform: scale(.9); }
     </table>
   </div>
 </div>
-<div class="footer"><span>FIXTLE</span><span><a href="/logout" style="color:inherit;text-decoration:none">Cerrar sesión</a></span><span>TURTLELITE</span></div>
+<div class="footer"><span>FIXTLE</span><span>TURTLELITE</span></div>
 <div id="toast" class="toast"></div>
 <div class="modal-overlay" id="modal">
   <div class="modal-card">
