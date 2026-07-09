@@ -39,12 +39,11 @@ def init_db():
             posicion INTEGER
         )
     """)
+    cur.execute("SELECT COUNT(*) FROM carrera")
+    if cur.fetchone()[0] == 0:
+        cur.execute("INSERT INTO carrera (iniciada) VALUES (FALSE)")
+    cur.close()
     conn.close()
-
-try:
-    init_db()
-except:
-    print("init_db error")
 
 LOGO_IZQ = "/static/BURROTON 2026.png"
 LOGO_DER = "/static/LOGO SAN BENITO JOSE.jpg"
@@ -171,13 +170,6 @@ function resultados() {
 }
 cargar();
 </script>
-@app.before_request
-def before_request():
-    try:
-        init_db()
-    except:
-        pass
-
 </body>
 </html>"""
 
@@ -192,6 +184,7 @@ def get_carrera(cur):
 
 @app.route("/api/datos")
 def api_datos():
+    init_db()
     conn = get_db()
     if not conn:
         return jsonify(carrera_iniciada=False, hora_inicio=None, corredores=[])
@@ -212,6 +205,7 @@ def api_datos():
 
 @app.route("/api/buscar")
 def api_buscar():
+    init_db()
     q = request.args.get("q", "").strip()
     conn = get_db()
     if not conn:
@@ -233,6 +227,7 @@ def api_buscar():
 
 @app.route("/api/registrar", methods=["POST"])
 def api_registrar():
+    init_db()
     dorsal = request.json.get("dorsal", "").strip()
     nombre = request.json.get("nombre", "").strip()
     if not dorsal or not nombre:
@@ -255,6 +250,7 @@ def api_registrar():
 
 @app.route("/api/iniciar", methods=["POST"])
 def api_iniciar():
+    init_db()
     conn = get_db()
     if not conn:
         return jsonify(error="Base de datos no disponible"), 503
@@ -273,6 +269,7 @@ def api_iniciar():
 
 @app.route("/api/llegada", methods=["POST"])
 def api_llegada():
+    init_db()
     dorsal = request.json.get("dorsal", "").strip()
     conn = get_db()
     if not conn:
@@ -309,6 +306,7 @@ def api_llegada():
 
 @app.route("/api/resultados")
 def api_resultados():
+    init_db()
     conn = get_db()
     if not conn:
         return jsonify(error="Base de datos no disponible"), 503
