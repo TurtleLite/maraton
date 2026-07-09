@@ -39,10 +39,6 @@ def init_db():
             posicion INTEGER
         )
     """)
-    cur.execute("SELECT COUNT(*) FROM carrera")
-    if cur.fetchone()[0] == 0:
-        cur.execute("INSERT INTO carrera (iniciada) VALUES (FALSE)")
-    cur.close()
     conn.close()
 
 try:
@@ -175,6 +171,13 @@ function resultados() {
 }
 cargar();
 </script>
+@app.before_request
+def before_request():
+    try:
+        init_db()
+    except:
+        pass
+
 </body>
 </html>"""
 
