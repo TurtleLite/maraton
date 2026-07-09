@@ -51,7 +51,7 @@ HTML = """<!DOCTYPE html>
 body { font-family: 'Segoe UI', system-ui, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px; }
 .container { max-width: 960px; margin: 0 auto; background: #fff; border-radius: 16px; padding: 28px; box-shadow: 0 20px 60px rgba(0,0,0,.15); }
 .header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
-.header img { height: 70px; width: auto; object-fit: contain; }
+.header img { height: 100px; width: auto; object-fit: contain; }
 .header h1 { font-size: 1.6rem; color: #1e293b; text-align: center; flex: 1; }
 .barra { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
 .barra button, .barra input { padding: 10px 16px; font-size: .95rem; border-radius: 8px; border: 1px solid #d1d5db; outline: none; }
