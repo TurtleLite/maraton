@@ -7,7 +7,7 @@ from flask import Flask, request, jsonify, render_template_string
 app = Flask(__name__)
 app.static_folder = "static"
 
-DB_URL = os.environ.get("DATABASE_URL", "postgresql://maraton_db_yu80_user:PGKNIB3F5HTynSqz7Vx6x01vJcQVG3bD@dpg-d97vq9qabeoc739aqnmg-a.virginia-postgres.render.com/maraton_db_yu80?sslmode=require")
+DB_URL = os.environ.get("DATABASE_URL", "postgresql://maraton_db_yu80_user:PGKNIB3F5HTynSqz7Vx6x01vJcQVG3bD@dpg-d97vq9qabeoc739aqnmg-a.virginia-postgres.render.com/maraton_db_yu80?sslmode=require?sslmode=require")
 
 def get_db():
     conn = psycopg2.connect(DB_URL)
@@ -15,10 +15,14 @@ def get_db():
     return conn
 
 def init_db():
+def get_db():
     try:
-            iniciada BOOLEAN DEFAULT FALSE,
-            hora_inicio TIMESTAMP
-        )
+        conn = psycopg2.connect(DB_URL, connect_timeout=5)
+        conn.autocommit = True
+        return conn
+    except Exception as e:
+        print("DB error:", e)
+        return None
     """)
     cur.execute("""
         CREATE TABLE IF NOT EXISTS corredores (
@@ -35,7 +39,10 @@ def init_db():
     cur.close()
     conn.close()
 
-# init_db()
+try:
+    init_db()
+except:
+    print("init_db error")
 
 LOGO_IZQ = "/static/BURROTON 2026.png"
 LOGO_DER = "/static/LOGO SAN BENITO JOSE.jpg"
