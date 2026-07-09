@@ -223,7 +223,7 @@ def api_datos():
         c = cur.fetchone()
         cur.close()
         conn.close()
-        return jsonify(carrera_iniciada=c[0], hora_inicio=c[1].isoformat() if c[1] else None, corredores=corredores)
+        return jsonify(carrera_iniciada=c["iniciada"], hora_inicio=c["hora_inicio"].isoformat() if c["hora_inicio"] else None, corredores=corredores)
     except Exception as e:
         print("datos error:", e)
         return jsonify(carrera_iniciada=False, hora_inicio=None, corredores=[])
@@ -246,7 +246,7 @@ def api_buscar():
         c = cur.fetchone()
         cur.close()
         conn.close()
-        return jsonify(carrera_iniciada=c[0], hora_inicio=c[1].isoformat() if c[1] else None, corredores=corredores)
+        return jsonify(carrera_iniciada=c["iniciada"], hora_inicio=c["hora_inicio"].isoformat() if c["hora_inicio"] else None, corredores=corredores)
     except Exception as e:
         print("buscar error:", e)
         return jsonify(carrera_iniciada=False, hora_inicio=None, corredores=[])
