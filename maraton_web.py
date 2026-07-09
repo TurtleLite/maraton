@@ -97,6 +97,7 @@ tr:hover { background: #f8fafc; }
     <input id="nombre-input" placeholder="Nombre del corredor">
     <button onclick="registrar(this)">Registrar</button>
     <button id="btn-iniciar" class="verde" onclick="iniciar()">Iniciar carrera</button>
+    <button id="btn-finalizar" class="rojo" onclick="finalizar()" style="display:none">Finalizar carrera</button>
   </div>
   <div class="barra">
     <input id="llegada-input" placeholder="Dorsal del que llega">
@@ -145,10 +146,12 @@ function cargar() {
       est.textContent = '🏁 Carrera en curso — Salida: ' + d.hora_inicio;
       est.className = 'estado andando';
       document.getElementById('btn-iniciar').disabled = true;
+      document.getElementById('btn-finalizar').style.display = '';
     } else {
       est.textContent = '⏸ Carrera no iniciada';
       est.className = 'estado parada';
       document.getElementById('btn-iniciar').disabled = false;
+      document.getElementById('btn-finalizar').style.display = 'none';
     }
   });
 }
@@ -179,6 +182,10 @@ function llegada(btn) {
   if (!dorsal) return alert('Ingresa un dorsal.');
   _fetch('/api/llegada', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({dorsal})}, btn)
     .then(d=> { if(d.error) alert(d.error); else { document.getElementById('llegada-input').value=''; cargar(); if(d.mensaje) toast(d.mensaje); } });
+}
+function finalizar() {
+  if (!confirm('¿Finalizar la carrera?')) return;
+  fetch('/api/finalizar', {method:'POST'}).then(r=>r.json()).then(d=> { if(d.error) alert(d.error); else toast('Carrera finalizada'); cargar(); });
 }
 function resultados() {
   fetch('/api/resultados').then(r=>r.json()).then(d=> {
@@ -377,6 +384,28 @@ def api_resultados():
     except Exception as e:
         print("resultados error:", e)
         return jsonify(error="Error al obtener resultados"), 500
+
+@app.route("/api/finalizar", methods=["POST"])
+def api_finalizar():
+    init_db()
+    conn = get_db()
+    if not conn:
+        return jsonify(error="Base de datos no disponible"), 503
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT iniciada FROM carrera WHERE id = 1")
+        if not cur.fetchone()[0]:
+            cur.close()
+            conn.close()
+            return jsonify(error="La carrera no está iniciada."), 400
+        cur.execute("UPDATE carrera SET iniciada = FALSE WHERE id = 1")
+        conn.commit()
+        cur.close()
+        conn.close()
+        return jsonify(ok=True)
+    except Exception as e:
+        print("finalizar error:", e)
+        return jsonify(error="Error al finalizar carrera"), 500
 
 @app.route("/api/importar_excel", methods=["POST"])
 def api_importar_excel():
