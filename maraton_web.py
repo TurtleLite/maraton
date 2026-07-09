@@ -122,7 +122,7 @@ tr:hover { background: #f8fafc; }
   </div>
   <div class="separador"></div>
   <div class="buscar-wrap">
-    <input id="buscar-input" placeholder="🔍 Buscar por dorsal o nombre..." oninput="cargar()">
+    <input id="buscar-input" placeholder="Buscar por dorsal o nombre..." oninput="cargar()">
   </div>
   <div class="contador" id="contador"></div>
   <div class="tabla-wrap">
