@@ -106,14 +106,14 @@ tr:hover { background: #f8fafc; }
   </div>
   <div id="estado-carrera" class="estado parada">⏸ Carrera no iniciada</div>
   <div class="barra">
-    <input id="dorsal-input" placeholder="Dorsal" size="6">
+    <input id="dorsal-input" placeholder="Número" size="6">
     <input id="nombre-input" placeholder="Nombre del corredor">
     <button onclick="registrar(this)">Registrar</button>
     <button id="btn-iniciar" class="verde" onclick="iniciar()">Iniciar carrera</button>
     <button id="btn-finalizar" class="rojo" onclick="finalizar()" style="display:none">Finalizar carrera</button>
   </div>
   <div class="barra">
-    <input id="llegada-input" placeholder="Dorsal del que llega">
+    <input id="llegada-input" placeholder="Número del que llega">
     <button class="verde" onclick="llegada(this)">Registrar llegada</button>
     <button onclick="resultados()">Ver resultados</button>
     <button onclick="reporte()">Descargar reporte</button>
@@ -122,12 +122,12 @@ tr:hover { background: #f8fafc; }
   </div>
   <div class="separador"></div>
   <div class="buscar-wrap">
-    <input id="buscar-input" placeholder="Buscar por dorsal o nombre..." oninput="cargar()">
+    <input id="buscar-input" placeholder="Buscar por número o nombre..." oninput="cargar()">
   </div>
   <div class="contador" id="contador"></div>
   <div class="tabla-wrap">
     <table>
-      <thead><tr><th>Dorsal</th><th>Nombre</th><th>Llegada</th><th>Posición</th><th>Acción</th></tr></thead>
+      <thead><tr><th>Núm.</th><th>Nombre</th><th>Llegada</th><th>Posición</th><th>Acción</th></tr></thead>
       <tbody id="tabla"></tbody>
     </table>
   </div>
@@ -207,7 +207,7 @@ function _fetch(url, opts, btn) {
 function registrar(btn) {
   const dorsal = document.getElementById('dorsal-input').value.trim();
   const nombre = document.getElementById('nombre-input').value.trim();
-  if (!dorsal || !nombre) return mostrarModal('Completa dorsal y nombre.');
+  if (!dorsal || !nombre) return mostrarModal('Completa número y nombre.');
   _fetch('/api/registrar', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({dorsal, nombre}) }, btn)
     .then(d=> { if(d.error) mostrarModal(d.error); else { document.getElementById('dorsal-input').value=''; document.getElementById('nombre-input').value=''; toast('Corredor registrado'); cargar(); } });
 }
@@ -218,7 +218,7 @@ function iniciar() {
 }
 function llegada(btn) {
   const dorsal = document.getElementById('llegada-input').value.trim();
-  if (!dorsal) return mostrarModal('Ingresa un dorsal.');
+  if (!dorsal) return mostrarModal('Ingresa un número.');
   _fetch('/api/llegada', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({dorsal})}, btn)
     .then(d=> { if(d.error) mostrarModal(d.error); else { document.getElementById('llegada-input').value=''; cargar(); if(d.mensaje) toast(d.mensaje); } });
 }
@@ -240,7 +240,7 @@ function reporte() {
   window.location.href = '/api/reporte';
 }
 function borrar(dorsal) {
-  confirmarModal('¿Borrar corredor dorsal ' + dorsal + '?').then(r => {
+  confirmarModal('¿Borrar corredor número ' + dorsal + '?').then(r => {
     if (!r) return;
     fetch('/api/borrar', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({dorsal}) })
       .then(r=>r.json()).then(d=> { if(d.error) mostrarModal(d.error); else toast('Corredor eliminado'); cargar(); });
@@ -325,7 +325,7 @@ def api_registrar():
         conn.close()
         return jsonify(ok=True)
     except psycopg2.errors.UniqueViolation:
-        return jsonify(error="Ya existe un corredor con ese dorsal."), 400
+        return jsonify(error="Ya existe un corredor con ese número."), 400
     except Exception as e:
         print("registrar error:", e)
         return jsonify(error="Error al registrar"), 500
@@ -373,7 +373,7 @@ def api_llegada():
         if not row:
             cur.close()
             conn.close()
-            return jsonify(error="Dorsal no encontrado."), 404
+            return jsonify(error="Número no encontrado."), 404
         if row[2]:
             cur.close()
             conn.close()
@@ -499,7 +499,7 @@ def api_borrar():
     init_db()
     dorsal = request.json.get("dorsal", "").strip()
     if not dorsal:
-        return jsonify(error="Dorsal requerido."), 400
+        return jsonify(error="Número requerido."), 400
     conn = get_db()
     if not conn:
         return jsonify(error="Base de datos no disponible"), 503
@@ -535,7 +535,7 @@ def api_reporte():
         wb = openpyxl.Workbook()
         ws = wb.active
         ws.title = "Reporte Burrotón"
-        ws.append(["Posición", "Dorsal", "Nombre", "Tiempo Llegada", "Tiempo Transcurrido"])
+        ws.append(["Posición", "Núm.", "Nombre", "Tiempo Llegada", "Tiempo Transcurrido"])
         for r in rows:
             trans = r[3] - inicio
             h, resto = divmod(int(trans.total_seconds()), 3600)
