@@ -45,7 +45,7 @@ HTML = """<!DOCTYPE html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Maratón San Benito José</title>
+<title>Burrotón San Benito José</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: 'Segoe UI', system-ui, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px; }
@@ -100,7 +100,7 @@ tr:hover { background: #f8fafc; }
 <div class="container" id="app">
   <div class="header">
     <img src="{{ logo_izq }}" alt="Logo">
-    <h1>Maratón San Benito José</h1>
+    <h1>Burrotón San Benito José</h1>
     <img src="{{ logo_der }}" alt="Logo">
   </div>
   <div id="estado-carrera" class="estado parada">⏸ Carrera no iniciada</div>
@@ -533,7 +533,7 @@ def api_reporte():
         conn.close()
         wb = openpyxl.Workbook()
         ws = wb.active
-        ws.title = "Reporte Maratón"
+        ws.title = "Reporte Burrotón"
         ws.append(["Posición", "Dorsal", "Nombre", "Tiempo Llegada", "Tiempo Transcurrido"])
         for r in rows:
             trans = r[3] - inicio
