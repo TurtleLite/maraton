@@ -56,7 +56,7 @@ html, body { height: 100%; margin: 0; padding: 0; }
 body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif; background: #e0ecfa; color: #2c3e6a; }
 .container { width: 100%; max-width: 1040px; min-height: 100vh; margin: 0 auto; padding: 36px 44px; background: #fff; box-shadow: 0 0 40px rgba(44, 62, 106, .06); animation: fadeUp .5s ease-out; }
 .header { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin-bottom: 32px; padding: 8px 0; }
-.header img { height: 140px; width: auto; object-fit: contain; filter: drop-shadow(0 2px 6px rgba(44, 62, 106, .08)); transition: transform .3s ease; }
+.header img { height: 140px; width: auto; object-fit: contain; transition: transform .3s ease; }
 .header img:hover { transform: scale(1.03); }
 .header h1 { font-size: 2.2rem; color: #2c5f8a; text-align: center; flex: 1; font-weight: 900; letter-spacing: .01em; font-family: 'Playfair Display', Georgia, serif; text-shadow: 0 2px 4px rgba(44, 62, 106, .08); animation: fadeIn 1s ease .2s both; }
 .barra { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
