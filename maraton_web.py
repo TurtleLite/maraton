@@ -49,6 +49,7 @@ HTML = """<!DOCTYPE html>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Burrotón San Benito José</title>
 <link rel="icon" href="/static/BURROTON 2026.png">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
 <style>
 html, body { height: 100%; margin: 0; padding: 0; }
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -56,7 +57,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxyge
 .container { width: 100%; max-width: 100%; min-height: 100vh; margin: 0; padding: 24px 32px; background: #fff; border-radius: 0; box-shadow: none; border: none; animation: fadeUp .45s ease-out; }
 .header { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-bottom: 24px; }
 .header img { height: 140px; width: auto; object-fit: contain; }
-.header h1 { font-size: 1.5rem; color: #2c5f8a; text-align: center; flex: 1; font-weight: 700; letter-spacing: -.02em; }
+.header h1 { font-size: 2.2rem; color: #2c5f8a; text-align: center; flex: 1; font-weight: 900; letter-spacing: .01em; font-family: 'Playfair Display', Georgia, serif; text-shadow: 0 2px 4px rgba(44, 62, 106, .1); }
 .barra { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
 .barra button, .barra input, .barra select { padding: 8px 14px; font-size: .875rem; border-radius: 10px; border: 1px solid #b8cce8; outline: none; font-family: inherit; }
 .barra input:focus { border-color: #4a7fc8; box-shadow: 0 0 0 3px rgba(74, 127, 200, .22); }
@@ -144,7 +145,7 @@ td button:active { transform: scale(.9); }
 .est-tiempo { font-size: .8rem; color: #5a7a9a; margin-left: 108px; margin-top: -2px; margin-bottom: 10px; }
 @media (max-width: 600px) {
   .container { padding: 16px; }
-  .header h1 { font-size: 1.1rem; }
+  .header h1 { font-size: 1.5rem; }
   .header img { height: 100px; }
   .barra button, .barra input, .barra select { font-size: .8rem; padding: 7px 10px; }
 
