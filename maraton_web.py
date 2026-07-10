@@ -298,7 +298,7 @@ function registrar(btn) {
   _fetch('/api/registrar', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({dorsal, nombre, categoria}) }, btn)
     .then(d => {
       if (d.duplicado) {
-        confirmarModal('El número ' + dorsal + ' ya está registrado.\n¿Reemplazarlo por ' + nombre + '?').then(r => {
+        confirmarModal('El número ' + dorsal + ' ya está registrado.\\n¿Reemplazarlo por ' + nombre + '?').then(r => {
           if (!r) return;
           _fetch('/api/registrar', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({dorsal, nombre, categoria, reemplazar: true}) }, btn)
             .then(d2 => { if(d2.error) mostrarModal(d2.error); else { document.getElementById('dorsal-input').value=''; document.getElementById('nombre-input').value=''; toast('Corredor reemplazado'); cargar(); } });
