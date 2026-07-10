@@ -75,6 +75,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxyge
 .barra input { flex: 1; min-width: 100px; background: #f2f7fc; transition: background .15s, border-color .15s, box-shadow .15s; color: #2c3e6a; }
 .barra input:focus { background: #fff; }
 .barra select { background: #f2f7fc; color: #2c3e6a; cursor: pointer; }
+.seccion { background: #f4f8fe; border: 1px solid #d0dce8; border-radius: 12px; padding: 16px 20px; margin-bottom: 16px; }
+.seccion h2 { font-size: .8rem; color: #2c5f8a; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+.seccion .fila { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.seccion .fila.espaciada { margin-top: 8px; }
 .estado { padding: 8px 16px; border-radius: 10px; margin-bottom: 20px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; font-size: .875rem; border: 1px solid; }
 .estado.parada { background: #fff0c8; color: #8a6a30; border-color: #f0d080; }
 .estado.andando { background: #c8f0d8; color: #2a7a48; border-color: #80d8a0; }
@@ -159,29 +163,41 @@ td button:active { transform: scale(.9); }
     <h1>Burrotón San Benito José</h1>
     <img src="{{ logo_der }}" alt="Logo">
   </div>
-  <div id="estado-carrera" class="estado parada">⏸ Carrera no iniciada</div>
-  <div class="barra">
-    <input id="dorsal-input" placeholder="Número" size="6">
-    <input id="nombre-input" placeholder="Nombre del corredor">
-    <select id="categoria-input">
-      <option value="">Sin categoría</option>
-      <option value="Novato">Novato</option>
-      <option value="Profesional">Profesional</option>
-    </select>
-    <button onclick="registrar(this)">Registrar</button>
-    <button id="btn-iniciar" class="verde" onclick="iniciar()">Iniciar carrera</button>
-    <button id="btn-finalizar" class="rojo" onclick="finalizar()" style="display:none">Finalizar carrera</button>
+  <div class="seccion">
+    <h2>📋 Registro de participantes</h2>
+    <div class="fila">
+      <input id="dorsal-input" placeholder="Número" size="6">
+      <input id="nombre-input" placeholder="Nombre del corredor">
+      <select id="categoria-input">
+        <option value="">Sin categoría</option>
+        <option value="Novato">Novato</option>
+        <option value="Profesional">Profesional</option>
+      </select>
+      <button onclick="registrar(this)">Registrar</button>
+      <button onclick="document.getElementById('excel-input').click()">Importar Excel</button>
+      <input type="file" id="excel-input" accept=".xlsx" style="display:none" onchange="importarExcel(this.files[0])">
+    </div>
   </div>
-  <div class="barra">
-    <input id="llegada-input" placeholder="Número del que llega">
-    <button class="verde" onclick="llegada(this)">Registrar llegada</button>
-    <button onclick="resultados()">Ver resultados</button>
-    <button onclick="reporte()">Descargar reporte</button>
-    <button onclick="estadisticas()">Estadísticas</button>
-    <button onclick="document.getElementById('excel-input').click()">Importar Excel</button>
-    <input type="file" id="excel-input" accept=".xlsx" style="display:none" onchange="importarExcel(this.files[0])">
+  <div class="seccion" id="seccion-carrera">
+    <h2>🏁 Control de carrera</h2>
+    <div class="fila">
+      <div id="estado-carrera" class="estado parada">⏸ Carrera no iniciada</div>
+      <button id="btn-iniciar" class="verde" onclick="iniciar()">Iniciar carrera</button>
+      <button id="btn-finalizar" class="rojo" onclick="finalizar()" style="display:none">Finalizar carrera</button>
+    </div>
+    <div class="fila espaciada">
+      <input id="llegada-input" placeholder="Número del que llega">
+      <button class="verde" onclick="llegada(this)">Registrar llegada</button>
+    </div>
   </div>
-  <div class="separador"></div>
+  <div class="seccion">
+    <h2>📊 Reportes</h2>
+    <div class="fila">
+      <button onclick="resultados()">Ver resultados</button>
+      <button onclick="reporte()">Descargar reporte</button>
+      <button onclick="estadisticas()">Estadísticas</button>
+    </div>
+  </div>
   <div class="buscar-wrap">
     <input id="buscar-input" placeholder="Buscar por número o nombre..." oninput="cargar()">
   </div>
