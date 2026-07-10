@@ -264,7 +264,7 @@ function cargar() {
     corredores.forEach((c, i) => {
       const tr = document.createElement('tr');
       tr.style.animation = 'rowIn .35s ease-out both';
-      tr.style.animationDelay = (i * 0.035) + 's';
+      tr.style.animationDelay = Math.min(i * 0.025, 0.6) + 's';
       const llegada = c.tiempo_llegada || '—';
       const posCat = c.posicion_categoria ? '#' + c.posicion_categoria : '—';
       const cat = c.categoria || '';
