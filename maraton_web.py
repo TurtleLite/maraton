@@ -84,14 +84,14 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxyge
 .buscar-wrap input::placeholder { color: #8a9ab0; }
 table { width: 100%; border-collapse: collapse; font-size: .85rem; }
 th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #c8d8e8; }
-th { background: #d6e4f5; font-weight: 600; color: #2c5f8a; position: sticky; top: 0; font-size: .8rem; text-transform: uppercase; letter-spacing: .04em; }
+th { background: #d6e4f5; font-weight: 600; color: #2c5f8a; font-size: .8rem; text-transform: uppercase; letter-spacing: .04em; }
 tr:last-child td { border-bottom: none; }
 tr:hover td { background: #e8f1fe; }
 tbody tr:nth-child(even) td { background: #f2f7fc; }
 tbody tr:nth-child(even):hover td { background: #e8f1fe; }
 td button { transition: background .15s, transform .15s; }
 td button:active { transform: scale(.9); }
-.tabla-wrap { max-height: calc(100vh - 310px); overflow-y: auto; border-radius: 10px; border: 1px solid #bcd0e8; }
+.tabla-wrap { border-radius: 10px; border: 1px solid #bcd0e8; }
 .contador { font-size: .8rem; color: #5a7a9a; margin-bottom: 10px; }
 .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(10px); background: #2c3e6a; color: #e8f0fe; padding: 12px 24px; border-radius: 12px; font-weight: 500; font-size: .875rem; box-shadow: 0 4px 20px rgba(44, 62, 106, .3); z-index: 999; opacity: 0; transition: opacity .25s, transform .25s; pointer-events: none; }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
@@ -147,7 +147,7 @@ td button:active { transform: scale(.9); }
   .header h1 { font-size: 1.1rem; }
   .header img { height: 50px; }
   .barra button, .barra input, .barra select { font-size: .8rem; padding: 7px 10px; }
-  .tabla-wrap { max-height: calc(100vh - 280px); }
+
 }
 </style>
 </head>
