@@ -54,8 +54,8 @@ HTML = """<!DOCTYPE html>
 html, body { height: 100%; margin: 0; padding: 0; }
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif; background: #e0ecfa; color: #2c3e6a; }
-.container { width: 100%; max-width: 1024px; min-height: 100vh; margin: 0 auto; padding: 32px 40px; background: #fff; box-shadow: 0 0 40px rgba(44, 62, 106, .06); animation: fadeUp .5s ease-out; }
-.header { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin-bottom: 28px; padding: 8px 0; }
+.container { width: 100%; max-width: 1040px; min-height: 100vh; margin: 0 auto; padding: 36px 44px; background: #fff; box-shadow: 0 0 40px rgba(44, 62, 106, .06); animation: fadeUp .5s ease-out; }
+.header { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin-bottom: 32px; padding: 8px 0; }
 .header img { height: 140px; width: auto; object-fit: contain; filter: drop-shadow(0 2px 6px rgba(44, 62, 106, .08)); transition: transform .3s ease; }
 .header img:hover { transform: scale(1.03); }
 .header h1 { font-size: 2.2rem; color: #2c5f8a; text-align: center; flex: 1; font-weight: 900; letter-spacing: .01em; font-family: 'Playfair Display', Georgia, serif; text-shadow: 0 2px 4px rgba(44, 62, 106, .08); animation: fadeIn 1s ease .2s both; }
@@ -76,14 +76,14 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxyge
 .barra input { flex: 1; min-width: 120px; background: #f7faff; transition: all .2s ease; color: #2c3e6a; }
 .barra input:focus { background: #fff; }
 .barra select { background: #f7faff; color: #2c3e6a; cursor: pointer; transition: border-color .2s ease; }
-.seccion { background: #f6faff; border: 1px solid #d8e4f0; border-radius: 14px; padding: 18px 22px; margin-bottom: 18px; box-shadow: 0 1px 4px rgba(44, 62, 106, .04); transition: all .3s cubic-bezier(.4,0,.2,1); animation: slideUp .45s ease-out both; }
+.seccion { background: #f6faff; border: 1px solid #d8e4f0; border-radius: 14px; padding: 24px 28px; margin-bottom: 22px; box-shadow: 0 1px 4px rgba(44, 62, 106, .04); transition: all .3s cubic-bezier(.4,0,.2,1); animation: slideUp .45s ease-out both; }
 .seccion:nth-child(2) { animation-delay: .08s; }
 .seccion:nth-child(3) { animation-delay: .16s; }
 .seccion:nth-child(4) { animation-delay: .24s; }
 .seccion:hover { box-shadow: 0 4px 16px rgba(44, 62, 106, .08); border-color: #bcd0e8; transform: translateY(-1px); }
-.seccion h2 { font-size: .8rem; color: #2c5f8a; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
-.seccion .fila { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
-.seccion .fila.espaciada { margin-top: 10px; }
+.seccion h2 { font-size: .8rem; color: #2c5f8a; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+.seccion .fila { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+.seccion .fila.espaciada { margin-top: 14px; }
 .estado { padding: 8px 18px; border-radius: 10px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; font-size: .875rem; border: 1px solid; transition: all .3s ease; }
 .estado.parada { background: #fff8e0; color: #8a6a30; border-color: #f0d080; }
 .estado.andando { background: #d0f0dc; color: #2a7a48; border-color: #80d8a0; }
@@ -162,13 +162,13 @@ td button:active { transform: scale(.88); }
 .est-barra-num { min-width: 36px; font-size: .85rem; font-weight: 700; color: #2c5f8a; text-align: right; }
 .est-tiempo { font-size: .8rem; color: #5a7a9a; margin-left: 120px; margin-top: -2px; margin-bottom: 10px; }
 @media (max-width: 600px) {
-  .container { padding: 16px; }
+  .container { padding: 20px; }
   .header { gap: 12px; margin-bottom: 20px; }
   .header h1 { font-size: 1.3rem; }
   .header img { height: 70px; }
   .barra button, .barra input, .barra select { font-size: .8rem; padding: 7px 10px; }
   .barra input { min-width: 80px; }
-  .seccion { padding: 14px 16px; }
+  .seccion { padding: 18px 20px; }
   .buscar-wrap input { padding: 10px 14px 10px 36px; font-size: .85rem; }
   .buscar-wrap::before { left: 11px; font-size: .8rem; }
   .th, td { padding: 8px 10px; }
