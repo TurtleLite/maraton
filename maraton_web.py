@@ -111,7 +111,7 @@ td button:active { transform: scale(.88); }
 .contador { font-size: .8rem; color: #5a7a9a; margin-bottom: 12px; font-weight: 500; animation: slideUp .45s ease-out .3s both; }
 .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(16px) scale(.95); background: #2c3e6a; color: #e8f0fe; padding: 14px 28px; border-radius: 14px; font-weight: 500; font-size: .9rem; box-shadow: 0 8px 32px rgba(44, 62, 106, .3); z-index: 999; opacity: 0; transition: all .35s cubic-bezier(.4,0,.2,1); pointer-events: none; }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
-.footer { position: fixed; bottom: 12px; left: 0; right: 0; display: flex; justify-content: space-between; padding: 0 28px; font-size: .65rem; color: rgba(44, 62, 106, .18); pointer-events: none; z-index: 0; letter-spacing: .06em; }
+.footer { position: fixed; bottom: 12px; left: 0; right: 0; display: flex; justify-content: space-between; padding: 0 12px; font-size: .65rem; color: rgba(44, 62, 106, .18); pointer-events: none; z-index: 0; letter-spacing: .06em; }
 .modal-overlay { position: fixed; inset: 0; background: rgba(44, 62, 106, .45); display: flex; align-items: center; justify-content: center; z-index: 1000; opacity: 0; transition: opacity .25s ease; pointer-events: none; backdrop-filter: blur(2px); }
 .modal-overlay.show { opacity: 1; pointer-events: auto; }
 .modal-card { background: #fff; border-radius: 18px; padding: 30px 34px; max-width: 420px; width: 92%; box-shadow: 0 12px 48px rgba(44, 62, 106, .2); text-align: center; transform: scale(.92) translateY(8px); transition: transform .3s cubic-bezier(.34,1.56,.64,1); }
