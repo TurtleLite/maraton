@@ -55,7 +55,7 @@ html, body { height: 100%; margin: 0; padding: 0; }
 body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif; background: #e0ecfa; color: #2c3e6a; }
 .container { width: 100%; max-width: 100%; min-height: 100vh; margin: 0; padding: 24px 32px; background: #fff; border-radius: 0; box-shadow: none; border: none; animation: fadeUp .45s ease-out; }
 .header { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-bottom: 24px; }
-.header img { height: 90px; width: auto; object-fit: contain; }
+.header img { height: 140px; width: auto; object-fit: contain; }
 .header h1 { font-size: 1.5rem; color: #2c5f8a; text-align: center; flex: 1; font-weight: 700; letter-spacing: -.02em; }
 .barra { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
 .barra button, .barra input, .barra select { padding: 8px 14px; font-size: .875rem; border-radius: 10px; border: 1px solid #b8cce8; outline: none; font-family: inherit; }
@@ -145,7 +145,7 @@ td button:active { transform: scale(.9); }
 @media (max-width: 600px) {
   .container { padding: 16px; }
   .header h1 { font-size: 1.1rem; }
-  .header img { height: 50px; }
+  .header img { height: 100px; }
   .barra button, .barra input, .barra select { font-size: .8rem; padding: 7px 10px; }
 
 }
