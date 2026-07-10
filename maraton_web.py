@@ -29,6 +29,7 @@ def init_db():
         cur.execute("CREATE TABLE IF NOT EXISTS carrera (id SERIAL PRIMARY KEY, iniciada BOOLEAN DEFAULT FALSE, hora_inicio TIMESTAMP)")
         cur.execute("CREATE TABLE IF NOT EXISTS corredores (id SERIAL PRIMARY KEY, dorsal VARCHAR(20) UNIQUE NOT NULL, nombre VARCHAR(200) NOT NULL, tiempo_llegada TIMESTAMP, posicion INTEGER)")
         cur.execute("ALTER TABLE corredores ADD COLUMN IF NOT EXISTS categoria VARCHAR(20) DEFAULT ''")
+        cur.execute("ALTER TABLE corredores ADD COLUMN IF NOT EXISTS posicion_categoria INTEGER")
         cur.execute("SELECT COUNT(*) FROM carrera")
         if cur.fetchone()[0] == 0:
             cur.execute("INSERT INTO carrera (iniciada) VALUES (FALSE)")
@@ -49,71 +50,104 @@ HTML = """<!DOCTYPE html>
 <title>Burrotón San Benito José</title>
 <link rel="icon" href="/static/BURROTON 2026.png">
 <style>
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif; background: #f0f2f5; min-height: 100vh; padding: 30px 20px; color: #1a1a2e; transition: background .3s, color .3s; }
-.container { max-width: 960px; margin: 0 auto; background: #fff; border-radius: 12px; padding: 32px; box-shadow: 0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.04); border: 1px solid #e8ecf0; animation: fadeUp .45s ease-out; }
+html, body { height: 100%; margin: 0; padding: 0; }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif; background: #ede4ff; color: #3d2a5c; }
+.container { width: 100%; max-width: 100%; min-height: 100vh; margin: 0; padding: 24px 32px; background: #fff; border-radius: 0; box-shadow: none; border: none; animation: fadeUp .45s ease-out; }
 .header { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-bottom: 24px; }
 .header img { height: 90px; width: auto; object-fit: contain; }
-.header h1 { font-size: 1.5rem; color: #1a1a2e; text-align: center; flex: 1; font-weight: 700; letter-spacing: -.02em; }
+.header h1 { font-size: 1.5rem; color: #4d2a7a; text-align: center; flex: 1; font-weight: 700; letter-spacing: -.02em; }
 .barra { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
-.barra button, .barra input { padding: 8px 14px; font-size: .875rem; border-radius: 6px; border: 1px solid #d4d8dd; outline: none; font-family: inherit; }
-.barra input:focus { border-color: #2563eb; box-shadow: 0 0 0 2px rgba(37,99,235,.12); }
-.barra button { background: #2563eb; color: #fff; border: none; cursor: pointer; font-weight: 500; transition: background .15s, box-shadow .15s; }
-.barra button:hover { background: #1d4ed8; box-shadow: 0 1px 3px rgba(37,99,235,.25); }
-.barra button:active { background: #1e40af; transform: scale(.97); }
-.barra button:disabled { opacity: .4; cursor: not-allowed; box-shadow: none; }
-.barra button.verde { background: #059669; }
-.barra button.verde:hover { background: #047857; box-shadow: 0 1px 3px rgba(5,150,105,.25); }
-.barra button.verde:active { background: #065f46; transform: scale(.97); }
-.barra button.rojo { background: #dc2626; }
-.barra button.rojo:hover { background: #b91c1c; box-shadow: 0 1px 3px rgba(220,38,38,.25); }
-.barra button.rojo:active { background: #991b1b; transform: scale(.97); }
-.barra input { flex: 1; min-width: 100px; background: #f8f9fa; transition: background .15s, border-color .15s, box-shadow .15s; }
+.barra button, .barra input, .barra select { padding: 8px 14px; font-size: .875rem; border-radius: 10px; border: 1px solid #c8b8e0; outline: none; font-family: inherit; }
+.barra input:focus { border-color: #9a7fc8; box-shadow: 0 0 0 3px rgba(154, 127, 200, .22); }
+.barra select:focus { border-color: #9a7fc8; box-shadow: 0 0 0 3px rgba(154, 127, 200, .22); }
+.barra button { background: #9a7fc8; color: #fff; border: none; cursor: pointer; font-weight: 600; transition: background .15s, box-shadow .15s; }
+.barra button:hover { background: #7d5fb0; box-shadow: 0 3px 10px rgba(154, 127, 200, .35); }
+.barra button:active { background: #6a4d9a; transform: scale(.97); }
+.barra button:disabled { opacity: .45; cursor: not-allowed; box-shadow: none; }
+.barra button.verde { background: #70c08a; }
+.barra button.verde:hover { background: #55a870; box-shadow: 0 3px 10px rgba(112, 192, 138, .4); }
+.barra button.verde:active { background: #429060; }
+.barra button.rojo { background: #e8847a; }
+.barra button.rojo:hover { background: #d4685e; box-shadow: 0 3px 10px rgba(232, 132, 122, .4); }
+.barra button.rojo:active { background: #c05046; }
+.barra input { flex: 1; min-width: 100px; background: #f8f4ff; transition: background .15s, border-color .15s, box-shadow .15s; color: #3d2a5c; }
 .barra input:focus { background: #fff; }
-.estado { padding: 8px 16px; border-radius: 6px; margin-bottom: 20px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; font-size: .875rem; border: 1px solid; }
-.estado.parada { background: #fffbeb; color: #92400e; border-color: #fde68a; }
-.estado.andando { background: #f0fdf4; color: #065f46; border-color: #a7f3d0; }
-.separador { height: 1px; background: #e8ecf0; margin: 20px 0; }
+.barra select { background: #f8f4ff; color: #3d2a5c; cursor: pointer; }
+.estado { padding: 8px 16px; border-radius: 10px; margin-bottom: 20px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; font-size: .875rem; border: 1px solid; }
+.estado.parada { background: #fff0c8; color: #8a6a30; border-color: #f0d080; }
+.estado.andando { background: #c8f0d8; color: #2a7a48; border-color: #80d8a0; }
+.separador { height: 1px; background: #d8cce8; margin: 20px 0; }
 .buscar-wrap { margin-bottom: 12px; }
-.buscar-wrap input { width: 100%; padding: 10px 14px; font-size: .875rem; border-radius: 6px; border: 1px solid #d4d8dd; outline: none; font-family: inherit; background: #f8f9fa; transition: background .15s, border-color .15s, box-shadow .15s; }
-.buscar-wrap input:focus { border-color: #2563eb; box-shadow: 0 0 0 2px rgba(37,99,235,.12); background: #fff; }
+.buscar-wrap input { width: 100%; padding: 10px 14px; font-size: .875rem; border-radius: 10px; border: 1px solid #c8b8e0; outline: none; font-family: inherit; background: #f8f4ff; transition: background .15s, border-color .15s, box-shadow .15s; color: #3d2a5c; }
+.buscar-wrap input:focus { border-color: #9a7fc8; box-shadow: 0 0 0 3px rgba(154, 127, 200, .22); background: #fff; }
+.buscar-wrap input::placeholder { color: #b0a0c8; }
 table { width: 100%; border-collapse: collapse; font-size: .85rem; }
-th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #e8ecf0; }
-th { background: #f8f9fa; font-weight: 600; color: #475569; position: sticky; top: 0; font-size: .8rem; text-transform: uppercase; letter-spacing: .03em; }
+th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #d8cce8; }
+th { background: #e8ddf5; font-weight: 600; color: #4d2a7a; position: sticky; top: 0; font-size: .8rem; text-transform: uppercase; letter-spacing: .04em; }
 tr:last-child td { border-bottom: none; }
-tr:hover td { background: #f8f9fa; }
-tbody tr:nth-child(even) td { background: #fafbfc; }
-tbody tr:nth-child(even):hover td { background: #f1f3f5; }
+tr:hover td { background: #f0e8ff; }
+tbody tr:nth-child(even) td { background: #f8f4ff; }
+tbody tr:nth-child(even):hover td { background: #f0e8ff; }
 td button { transition: background .15s, transform .15s; }
 td button:active { transform: scale(.9); }
-.tabla-wrap { max-height: 500px; overflow-y: auto; border-radius: 8px; border: 1px solid #e8ecf0; }
-.contador { font-size: .8rem; color: #64748b; margin-bottom: 10px; }
-.toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(10px); background: #1e293b; color: #f1f5f9; padding: 12px 24px; border-radius: 8px; font-weight: 500; font-size: .875rem; box-shadow: 0 4px 16px rgba(0,0,0,.2); z-index: 999; opacity: 0; transition: opacity .25s, transform .25s; pointer-events: none; }
+.tabla-wrap { max-height: calc(100vh - 310px); overflow-y: auto; border-radius: 10px; border: 1px solid #d4c4e8; }
+.contador { font-size: .8rem; color: #7a5a9a; margin-bottom: 10px; }
+.toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(10px); background: #3d2a5c; color: #f5f0ff; padding: 12px 24px; border-radius: 12px; font-weight: 500; font-size: .875rem; box-shadow: 0 4px 20px rgba(61, 42, 92, .3); z-index: 999; opacity: 0; transition: opacity .25s, transform .25s; pointer-events: none; }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-.footer { position: fixed; bottom: 12px; left: 0; right: 0; display: flex; justify-content: space-between; padding: 0 24px; font-size: .65rem; color: rgba(0,0,0,.25); pointer-events: none; z-index: 0; letter-spacing: .04em; }
-.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.35); display: flex; align-items: center; justify-content: center; z-index: 1000; opacity: 0; transition: opacity .2s; pointer-events: none; }
+.footer { position: fixed; bottom: 12px; left: 0; right: 0; display: flex; justify-content: space-between; padding: 0 24px; font-size: .65rem; color: rgba(61, 42, 92, .2); pointer-events: none; z-index: 0; letter-spacing: .04em; }
+.modal-overlay { position: fixed; inset: 0; background: rgba(61, 42, 92, .4); display: flex; align-items: center; justify-content: center; z-index: 1000; opacity: 0; transition: opacity .2s; pointer-events: none; }
 .modal-overlay.show { opacity: 1; pointer-events: auto; }
-.modal-card { background: #fff; border-radius: 12px; padding: 28px 32px; max-width: 420px; width: 90%; box-shadow: 0 8px 40px rgba(0,0,0,.18); text-align: center; }
-.modal-card p { font-size: .95rem; color: #1a1a2e; margin-bottom: 22px; line-height: 1.55; white-space: pre-wrap; }
+.modal-card { background: #fff; border-radius: 16px; padding: 28px 32px; max-width: 420px; width: 90%; box-shadow: 0 8px 40px rgba(61, 42, 92, .18); text-align: center; }
+.modal-card p { font-size: .95rem; color: #3d2a5c; margin-bottom: 22px; line-height: 1.55; white-space: pre-wrap; }
 .modal-overlay.show .modal-card { animation: modalIn .25s ease-out; }
 .modal-card .botones { display: flex; gap: 10px; justify-content: center; }
-.modal-card button { padding: 9px 22px; border-radius: 6px; border: none; font-weight: 500; font-size: .875rem; cursor: pointer; transition: background .15s; font-family: inherit; }
-.modal-card .btn-si { background: #059669; color: #fff; }
-.modal-card .btn-si:hover { background: #047857; }
-.modal-card .btn-no { background: #e5e7eb; color: #475569; }
-.modal-card .btn-no:hover { background: #d1d5db; }
-.modal-card .btn-ok { background: #2563eb; color: #fff; min-width: 100px; }
-.modal-card .btn-ok:hover { background: #1d4ed8; }
+.modal-card button { padding: 9px 22px; border-radius: 10px; border: none; font-weight: 600; font-size: .875rem; cursor: pointer; transition: background .15s; font-family: inherit; }
+.modal-card .btn-si { background: #70c08a; color: #fff; }
+.modal-card .btn-si:hover { background: #55a870; }
+.modal-card .btn-no { background: #d8cce8; color: #4d2a7a; }
+.modal-card .btn-no:hover { background: #c8b8e0; }
+.modal-card .btn-ok { background: #9a7fc8; color: #fff; min-width: 100px; }
+.modal-card .btn-ok:hover { background: #7d5fb0; }
 @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes rowIn { from { opacity: 0; transform: translateX(-12px); } to { opacity: 1; transform: translateX(0); } }
 @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .4; } }
 @keyframes modalIn { from { opacity: 0; transform: scale(.92); } to { opacity: 1; transform: scale(1); } }
-.estado.andando::before { content: ''; display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #059669; animation: pulse 1.8s ease-in-out infinite; margin-right: 4px; }
+.estado.andando::before { content: ''; display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #55a870; animation: pulse 1.8s ease-in-out infinite; margin-right: 4px; }
+.badge-novato, .badge-profesional, .badge-none { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: .75rem; font-weight: 600; letter-spacing: .02em; }
+.badge-novato { background: #e8ddf5; color: #6a3d9a; border: 1px solid #c8a8e0; }
+.badge-profesional { background: #d0f0dc; color: #2a7a48; border: 1px solid #90d8a8; }
+.badge-none { background: transparent; color: #b8aed0; font-weight: 400; }
+.filtros-cat { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+.filtro-cat { padding: 5px 14px; font-size: .8rem; border-radius: 20px; border: 1px solid #c8b8e0; background: #f8f4ff; color: #4d2a7a; cursor: pointer; font-weight: 500; transition: all .15s; font-family: inherit; }
+.filtro-cat:hover { background: #e8ddf5; }
+.filtro-cat.activo { background: #9a7fc8; color: #fff; border-color: #9a7fc8; }
+.filtro-cat.activo:hover { background: #7d5fb0; }
+.modal-card.estadisticas { max-width: 560px; text-align: left; }
+.est-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 16px 0; }
+.est-card { background: #f8f4ff; border-radius: 12px; padding: 14px; text-align: center; border: 1px solid #d8cce8; }
+.est-card .num { font-size: 1.6rem; font-weight: 700; color: #4d2a7a; display: block; }
+.est-card .lab { font-size: .75rem; color: #7a5a9a; margin-top: 2px; }
+.est-card.verde-card .num { color: #2a7a48; }
+.est-card.verde-card { background: #eaf6ef; border-color: #b0e0c0; }
+.est-card.rojo-card .num { color: #b05046; }
+.est-card.rojo-card { background: #fceeec; border-color: #e8bcb4; }
+.est-seccion { margin: 16px 0; }
+.est-seccion h3 { font-size: .85rem; color: #4d2a7a; margin-bottom: 8px; font-weight: 600; }
+.est-barra-wrap { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.est-barra-label { min-width: 100px; font-size: .8rem; color: #3d2a5c; font-weight: 500; }
+.est-barra-track { flex: 1; height: 22px; background: #ede4ff; border-radius: 11px; overflow: hidden; }
+.est-barra-fill { height: 100%; border-radius: 11px; transition: width .6s ease-out; background: linear-gradient(90deg, #b89ad8, #9a7fc8); }
+.est-barra-fill.verde { background: linear-gradient(90deg, #80d8a0, #55a870); }
+.est-barra-fill.rojo { background: linear-gradient(90deg, #e8a098, #d4685e); }
+.est-barra-num { min-width: 30px; font-size: .8rem; font-weight: 600; color: #4d2a7a; text-align: right; }
+.est-tiempo { font-size: .8rem; color: #7a5a9a; margin-left: 108px; margin-top: -2px; margin-bottom: 10px; }
 @media (max-width: 600px) {
-  .container { padding: 20px; }
+  .container { padding: 16px; }
   .header h1 { font-size: 1.1rem; }
-  .header img { height: 60px; }
-  .barra button, .barra input { font-size: .8rem; padding: 7px 10px; }
+  .header img { height: 50px; }
+  .barra button, .barra input, .barra select { font-size: .8rem; padding: 7px 10px; }
+  .tabla-wrap { max-height: calc(100vh - 280px); }
 }
 </style>
 </head>
@@ -142,6 +176,7 @@ td button:active { transform: scale(.9); }
     <button class="verde" onclick="llegada(this)">Registrar llegada</button>
     <button onclick="resultados()">Ver resultados</button>
     <button onclick="reporte()">Descargar reporte</button>
+    <button onclick="estadisticas()">Estadísticas</button>
     <button onclick="document.getElementById('excel-input').click()">Importar Excel</button>
     <input type="file" id="excel-input" accept=".xlsx" style="display:none" onchange="importarExcel(this.files[0])">
   </div>
@@ -149,10 +184,16 @@ td button:active { transform: scale(.9); }
   <div class="buscar-wrap">
     <input id="buscar-input" placeholder="Buscar por número o nombre..." oninput="cargar()">
   </div>
+  <div class="filtros-cat" id="filtros-cat">
+    <button class="filtro-cat activo" data-cat="" onclick="filtrarCategoria('')">Todos</button>
+    <button class="filtro-cat" data-cat="Novato" onclick="filtrarCategoria('Novato')">Novato</button>
+    <button class="filtro-cat" data-cat="Profesional" onclick="filtrarCategoria('Profesional')">Profesional</button>
+    <button class="filtro-cat" data-cat="Sin categoría" onclick="filtrarCategoria('Sin categoría')">Sin categoría</button>
+  </div>
   <div class="contador" id="contador"></div>
   <div class="tabla-wrap">
     <table>
-      <thead><tr><th>Núm.</th><th>Nombre</th><th>Cat.</th><th>Llegada</th><th>Posición</th><th>Acción</th></tr></thead>
+      <thead><tr><th>Núm.</th><th>Nombre</th><th>Cat.</th><th>Llegada</th><th>Pos. Cat.</th><th>Acción</th></tr></thead>
       <tbody id="tabla"></tbody>
     </table>
   </div>
@@ -166,19 +207,33 @@ td button:active { transform: scale(.9); }
   </div>
 </div>
 <script>
+let filtroActual = '';
+
+function filtrarCategoria(cat) {
+  filtroActual = cat;
+  document.querySelectorAll('.filtro-cat').forEach(b => b.classList.toggle('activo', b.dataset.cat === cat));
+  cargar();
+}
+
 function cargar() {
   const q = document.getElementById('buscar-input').value.trim();
   const url = q ? '/api/buscar?q=' + encodeURIComponent(q) : '/api/datos';
   fetch(url).then(r=>r.json()).then(d=>{
     const tbody = document.getElementById('tabla');
     tbody.innerHTML = '';
-    (d.corredores||[]).forEach((c, i) => {
+    let corredores = d.corredores||[];
+    if (filtroActual) {
+      corredores = corredores.filter(c => (c.categoria||'Sin categoría') === filtroActual);
+    }
+    corredores.forEach((c, i) => {
       const tr = document.createElement('tr');
       tr.style.animation = 'rowIn .35s ease-out both';
       tr.style.animationDelay = (i * 0.035) + 's';
       const llegada = c.tiempo_llegada || '—';
-      const pos = c.posicion ? '#' + c.posicion : '—';
-      tr.innerHTML = '<td>' + c.dorsal + '</td><td>' + c.nombre + '</td><td>' + (c.categoria||'') + '</td><td>' + llegada + '</td><td>' + pos + '</td><td></td>';
+      const posCat = c.posicion_categoria ? '#' + c.posicion_categoria : '—';
+      const cat = c.categoria || '';
+      const badge = cat ? '<span class="badge-' + cat.toLowerCase() + '">' + cat + '</span>' : '<span class="badge-none">—</span>';
+      tr.innerHTML = '<td>' + c.dorsal + '</td><td>' + c.nombre + '</td><td>' + badge + '</td><td>' + llegada + '</td><td>' + posCat + '</td><td></td>';
       const btn = document.createElement('button');
       btn.className = 'rojo';
       btn.style.cssText = 'padding:4px 10px;font-size:.8rem';
@@ -187,7 +242,9 @@ function cargar() {
       tr.lastChild.appendChild(btn);
       tbody.appendChild(tr);
     });
-    document.getElementById('contador').textContent = 'Total: ' + (d.corredores||[]).length + ' corredores';
+    const total = d.corredores ? d.corredores.length : 0;
+    const visibles = corredores.length;
+    document.getElementById('contador').textContent = 'Total: ' + total + ' corredores' + (filtroActual ? ' — mostrando ' + visibles + ' ' + filtroActual : '');
     const est = document.getElementById('estado-carrera');
     if (d.carrera_iniciada) {
       est.textContent = '🏁 Carrera en curso — Salida: ' + d.hora_inicio;
@@ -216,6 +273,7 @@ function mostrarModal(msg) {
 }
 function cerrarModal() {
   document.getElementById('modal').classList.remove('show');
+  document.querySelector('.modal-card').classList.remove('estadisticas');
 }
 function confirmarModal(msg) {
   return new Promise(resolve => {
@@ -238,7 +296,22 @@ function registrar(btn) {
   const categoria = document.getElementById('categoria-input').value;
   if (!dorsal || !nombre) return mostrarModal('Completa número y nombre.');
   _fetch('/api/registrar', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({dorsal, nombre, categoria}) }, btn)
-    .then(d=> { if(d.error) mostrarModal(d.error); else { document.getElementById('dorsal-input').value=''; document.getElementById('nombre-input').value=''; toast('Corredor registrado'); cargar(); } });
+    .then(d => {
+      if (d.duplicado) {
+        confirmarModal('El número ' + dorsal + ' ya está registrado.\n¿Reemplazarlo por ' + nombre + '?').then(r => {
+          if (!r) return;
+          _fetch('/api/registrar', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({dorsal, nombre, categoria, reemplazar: true}) }, btn)
+            .then(d2 => { if(d2.error) mostrarModal(d2.error); else { document.getElementById('dorsal-input').value=''; document.getElementById('nombre-input').value=''; toast('Corredor reemplazado'); cargar(); } });
+        });
+      } else if (d.error) {
+        mostrarModal(d.error);
+      } else {
+        document.getElementById('dorsal-input').value='';
+        document.getElementById('nombre-input').value='';
+        toast('Corredor registrado');
+        cargar();
+      }
+    });
 }
 function iniciar() {
   const btn = document.getElementById('btn-iniciar');
@@ -260,13 +333,71 @@ function finalizar() {
 function resultados() {
   fetch('/api/resultados').then(r=>r.json()).then(d=> {
     if(d.error) return mostrarModal(d.error);
+    const cats = {};
+    d.llegados.forEach(c => {
+      if (!cats[c.categoria]) cats[c.categoria] = [];
+      cats[c.categoria].push(c);
+    });
     let txt = 'RESULTADOS\\n' + '='.repeat(30) + '\\n';
-    d.llegados.forEach(c => { txt += '#' + c.pos + '  ' + c.dorsal + '  ' + c.nombre + '  ' + c.tiempo + '\\n'; });
+    const ordenCats = ['Novato', 'Profesional', 'Sin categoría'];
+    ordenCats.forEach(cat => {
+      if (!cats[cat]) return;
+      txt += '\\n  🏅 ' + cat.toUpperCase() + '\\n' + '-'.repeat(20) + '\\n';
+      cats[cat].forEach(c => { txt += '  #' + c.pos_cat + '  ' + c.dorsal + '  ' + c.nombre + '  ' + c.tiempo + '\\n'; });
+    });
     mostrarModal(txt);
   });
 }
 function reporte() {
   window.location.href = '/api/reporte';
+}
+function estadisticas() {
+  fetch('/api/estadisticas').then(r=>r.json()).then(d => {
+    if (d.error) return mostrarModal(d.error);
+    const cats = ['Novato', 'Profesional', 'Sin categoría'];
+    const maxCat = Math.max(1, ...cats.map(c => d.por_categoria[c] || 0));
+    const maxArr = Math.max(1, ...cats.map(c => d.llegados_por_categoria[c] || 0));
+    const pct = function(val, max) { return Math.round((val / max) * 100); };
+    let html = '<div class="est-grid">';
+    html += '<div class="est-card"><span class="num">' + d.total + '</span><span class="lab">Total corredores</span></div>';
+    html += '<div class="est-card verde-card"><span class="num">' + d.llegados + '</span><span class="lab">Llegadas</span></div>';
+    html += '<div class="est-card rojo-card"><span class="num">' + d.pendientes + '</span><span class="lab">Pendientes</span></div>';
+    const catsReg = cats.filter(c => d.por_categoria[c]).length;
+    html += '<div class="est-card"><span class="num">' + catsReg + '</span><span class="lab">Categorías</span></div>';
+    html += '</div>';
+    html += '<div class="est-seccion"><h3>📊 Corredores por categoría</h3>';
+    cats.forEach(c => {
+      const val = d.por_categoria[c] || 0;
+      const w = pct(val, maxCat);
+      html += '<div class="est-barra-wrap"><span class="est-barra-label">' + c + '</span>';
+      html += '<div class="est-barra-track"><div class="est-barra-fill" style="width:' + w + '%"></div></div>';
+      html += '<span class="est-barra-num">' + val + '</span></div>';
+    });
+    html += '</div>';
+    html += '<div class="est-seccion"><h3>🏁 Llegadas por categoría</h3>';
+    cats.forEach(c => {
+      const val = d.llegados_por_categoria[c] || 0;
+      const w = pct(val, maxArr);
+      html += '<div class="est-barra-wrap"><span class="est-barra-label">' + c + '</span>';
+      html += '<div class="est-barra-track"><div class="est-barra-fill verde" style="width:' + w + '%"></div></div>';
+      html += '<span class="est-barra-num">' + val + '</span></div>';
+    });
+    html += '</div>';
+    if (Object.keys(d.tiempo_promedio).length) {
+      html += '<div class="est-seccion"><h3>⏱ Tiempo promedio por categoría</h3>';
+      cats.forEach(c => {
+        if (d.tiempo_promedio[c]) {
+          html += '<div class="est-tiempo"><strong>' + c + ':</strong> ' + d.tiempo_promedio[c] + '</div>';
+        }
+      });
+      html += '</div>';
+    }
+    const modal = document.getElementById('modal');
+    document.getElementById('modal-msg').innerHTML = html;
+    document.getElementById('modal-botones').innerHTML = '<button class="btn-ok" onclick="cerrarModal()">Cerrar</button>';
+    modal.classList.add('show');
+    document.querySelector('.modal-card').classList.add('estadisticas');
+  });
 }
 function borrar(dorsal) {
   confirmarModal('¿Borrar corredor número ' + dorsal + '?').then(r => {
@@ -279,8 +410,12 @@ function importarExcel(file) {
   if (!file) return;
   const form = new FormData();
   form.append('excel', file);
+  const inp = document.getElementById('excel-input');
   fetch('/api/importar_excel', { method:'POST', body: form })
-    .then(r=>r.json()).then(d=> { if(d.error) mostrarModal(d.error); else toast(d.mensaje); cargar(); });
+    .then(r => { console.log('Status:', r.status); return r.text().then(t => { console.log('Respuesta:', t); return JSON.parse(t); }); })
+    .then(d => { if(d.error) mostrarModal(d.error); else toast(d.mensaje); cargar(); })
+    .catch(e => { console.error('Error import:', e); mostrarModal('Error al importar: ' + e.message); })
+    .finally(() => { inp.value = ''; });
 }
 cargar();
 </script>
@@ -299,11 +434,11 @@ def api_datos():
         return jsonify(carrera_iniciada=False, hora_inicio=None, corredores=[])
     try:
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-        cur.execute("SELECT dorsal, nombre, categoria, tiempo_llegada, posicion FROM corredores ORDER BY id")
+        cur.execute("SELECT dorsal, nombre, categoria, tiempo_llegada, posicion, posicion_categoria FROM corredores ORDER BY id")
         rows = cur.fetchall()
         corredores = []
         for r in rows:
-            corredores.append({"dorsal": r["dorsal"], "nombre": r["nombre"], "tiempo_llegada": r["tiempo_llegada"].isoformat() if r["tiempo_llegada"] else None, "posicion": r["posicion"]})
+            corredores.append({"dorsal": r["dorsal"], "nombre": r["nombre"], "categoria": r["categoria"] or "", "tiempo_llegada": r["tiempo_llegada"].isoformat() if r["tiempo_llegada"] else None, "posicion": r["posicion"], "posicion_categoria": r["posicion_categoria"]})
         cur.execute("SELECT iniciada, hora_inicio FROM carrera WHERE id = 1")
         c = cur.fetchone()
         cur.close()
@@ -322,11 +457,11 @@ def api_buscar():
         return jsonify(carrera_iniciada=False, hora_inicio=None, corredores=[])
     try:
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-        cur.execute("SELECT dorsal, nombre, categoria, tiempo_llegada, posicion FROM corredores WHERE dorsal ILIKE %s OR nombre ILIKE %s ORDER BY id", (f"%{q}%", f"%{q}%"))
+        cur.execute("SELECT dorsal, nombre, categoria, tiempo_llegada, posicion, posicion_categoria FROM corredores WHERE dorsal ILIKE %s OR nombre ILIKE %s ORDER BY id", (f"%{q}%", f"%{q}%"))
         rows = cur.fetchall()
         corredores = []
         for r in rows:
-            corredores.append({"dorsal": r["dorsal"], "nombre": r["nombre"], "tiempo_llegada": r["tiempo_llegada"].isoformat() if r["tiempo_llegada"] else None, "posicion": r["posicion"]})
+            corredores.append({"dorsal": r["dorsal"], "nombre": r["nombre"], "categoria": r["categoria"] or "", "tiempo_llegada": r["tiempo_llegada"].isoformat() if r["tiempo_llegada"] else None, "posicion": r["posicion"], "posicion_categoria": r["posicion_categoria"]})
         cur.execute("SELECT iniciada, hora_inicio FROM carrera WHERE id = 1")
         c = cur.fetchone()
         cur.close()
@@ -342,6 +477,7 @@ def api_registrar():
     dorsal = request.json.get("dorsal", "").strip()
     nombre = request.json.get("nombre", "").strip()
     categoria = request.json.get("categoria", "").strip()
+    reemplazar = request.json.get("reemplazar", False)
     if not dorsal or not nombre:
         return jsonify(error="Completa todos los campos."), 400
     conn = get_db()
@@ -349,13 +485,24 @@ def api_registrar():
         return jsonify(error="Base de datos no disponible"), 503
     try:
         cur = conn.cursor()
-        cur.execute("INSERT INTO corredores (dorsal, nombre, categoria) VALUES (%s, %s, %s)", (dorsal, nombre, categoria))
+        if reemplazar:
+            cur.execute("""
+                INSERT INTO corredores (dorsal, nombre, categoria) VALUES (%s, %s, %s)
+                ON CONFLICT (dorsal) DO UPDATE SET nombre = %s, categoria = %s,
+                tiempo_llegada = NULL, posicion = NULL, posicion_categoria = NULL
+            """, (dorsal, nombre, categoria, nombre, categoria))
+        else:
+            try:
+                cur.execute("INSERT INTO corredores (dorsal, nombre, categoria) VALUES (%s, %s, %s)", (dorsal, nombre, categoria))
+            except psycopg2.errors.UniqueViolation:
+                conn.rollback()
+                cur.close()
+                conn.close()
+                return jsonify(error="Ya existe un corredor con ese número.", duplicado=True), 409
         conn.commit()
         cur.close()
         conn.close()
         return jsonify(ok=True)
-    except psycopg2.errors.UniqueViolation:
-        return jsonify(error="Ya existe un corredor con ese número."), 400
     except Exception as e:
         print("registrar error:", e)
         return jsonify(error="Error al registrar"), 500
@@ -398,20 +545,23 @@ def api_llegada():
             cur.close()
             conn.close()
             return jsonify(error="La carrera no ha iniciado."), 400
-        cur.execute("SELECT id, nombre, tiempo_llegada FROM corredores WHERE dorsal = %s", (dorsal,))
+        cur.execute("SELECT id, nombre, categoria, tiempo_llegada FROM corredores WHERE dorsal = %s", (dorsal,))
         row = cur.fetchone()
         if not row:
             cur.close()
             conn.close()
             return jsonify(error="Número no encontrado."), 404
-        if row[2]:
+        if row[3]:
             cur.close()
             conn.close()
             return jsonify(error=f"{row[1]} ya llegó."), 400
         ahora = datetime.now()
+        cat = row[2] or "Sin categoría"
         cur.execute("SELECT COUNT(*) FROM corredores WHERE tiempo_llegada IS NOT NULL")
         posicion = cur.fetchone()[0] + 1
-        cur.execute("UPDATE corredores SET tiempo_llegada = %s, posicion = %s WHERE id = %s", (ahora, posicion, row[0]))
+        cur.execute("SELECT COUNT(*) FROM corredores WHERE tiempo_llegada IS NOT NULL AND categoria = %s", (row[2],))
+        posicion_categoria = cur.fetchone()[0] + 1
+        cur.execute("UPDATE corredores SET tiempo_llegada = %s, posicion = %s, posicion_categoria = %s WHERE id = %s", (ahora, posicion, posicion_categoria, row[0]))
         conn.commit()
         cur.execute("SELECT hora_inicio FROM carrera WHERE id = 1")
         inicio = cur.fetchone()[0]
@@ -420,7 +570,7 @@ def api_llegada():
         m, s = divmod(resto, 60)
         cur.close()
         conn.close()
-        return jsonify(ok=True, mensaje=f"¡{row[1]} llegó! #{posicion} — {h}h {m}m {s}s")
+        return jsonify(ok=True, mensaje=f"¡{row[1]} llegó! #{posicion_categoria} en {cat} — {h}h {m}m {s}s")
     except Exception as e:
         print("llegada error:", e)
         return jsonify(error="Error al registrar llegada"), 500
@@ -439,7 +589,7 @@ def api_resultados():
             cur.close()
             conn.close()
             return jsonify(error="La carrera no ha iniciado."), 400
-        cur.execute("SELECT dorsal, nombre, categoria, posicion, tiempo_llegada FROM corredores WHERE tiempo_llegada IS NOT NULL ORDER BY posicion")
+        cur.execute("SELECT dorsal, nombre, categoria, posicion, posicion_categoria, tiempo_llegada FROM corredores WHERE tiempo_llegada IS NOT NULL ORDER BY categoria, posicion_categoria")
         rows = cur.fetchall()
         if not rows:
             cur.close()
@@ -447,10 +597,10 @@ def api_resultados():
             return jsonify(error="Aún no hay llegadas."), 400
         res = []
         for r in rows:
-            trans = r[4] - inicio
+            trans = r[5] - inicio
             h, resto = divmod(int(trans.total_seconds()), 3600)
             m, s = divmod(resto, 60)
-            res.append({"pos": r[3], "dorsal": r[0], "nombre": r[1], "categoria": r[2], "tiempo": f"{h}h {m}m {s}s"})
+            res.append({"pos": r[3], "pos_cat": r[4], "dorsal": r[0], "nombre": r[1], "categoria": r[2] or "Sin categoría", "tiempo": f"{h}h {m}m {s}s"})
         cur.close()
         conn.close()
         return jsonify(llegados=res)
@@ -490,16 +640,17 @@ def api_importar_excel():
         wb = openpyxl.load_workbook(io.BytesIO(file.read()))
         ws = wb.active
         headers = [cell.value for cell in ws[1]]
+        header_names = [str(h).strip() if h else "" for h in headers]
         col_dorsal = None
         col_nombre = None
         col_categoria = None
-        for i, h in enumerate(headers):
-            h_lower = str(h).strip().lower() if h else ""
+        for i, h in enumerate(header_names):
+            h_lower = h.lower()
             if "dorsal" in h_lower or "numero" in h_lower or "num" in h_lower:
                 col_dorsal = i
-            if "nombre" in h_lower or "corredor" in h_lower:
+            if "nombre" in h_lower or "corredor" in h_lower or "apellido" in h_lower or "participante" in h_lower:
                 col_nombre = i
-            if "novato" in h_lower or "profesional" in h_lower or "categoria" in h_lower or "cat" in h_lower:
+            if "categoria" in h_lower or "categoría" in h_lower or "cat" in h_lower or "tipo" in h_lower or "nivel" in h_lower or "clase" in h_lower or "grupo" in h_lower or "division" in h_lower or "división" in h_lower or "novato" in h_lower or "profesional" in h_lower:
                 col_categoria = i
         if col_dorsal is None or col_nombre is None:
             return jsonify(error="No se encontraron columnas 'Número' y 'Nombre'."), 400
@@ -508,29 +659,91 @@ def api_importar_excel():
             return jsonify(error="Base de datos no disponible"), 503
         cur = conn.cursor()
         cont = 0
+        ejemplo_valor = ""
         for row in ws.iter_rows(min_row=2, values_only=True):
             dorsal = str(row[col_dorsal]).strip() if row[col_dorsal] is not None else ""
             nombre = str(row[col_nombre]).strip() if row[col_nombre] is not None else ""
             if not dorsal or not nombre:
                 continue
-            categoria = str(row[col_categoria]).strip() if col_categoria is not None and row[col_categoria] is not None else ""
-            if categoria.lower() in ("novato", "profesional"):
-                pass
-            else:
-                categoria = ""
-            try:
-                cur.execute("INSERT INTO corredores (dorsal, nombre, categoria) VALUES (%s, %s, %s)", (dorsal, nombre, categoria))
-                conn.commit()
-                cont += 1
-            except psycopg2.errors.UniqueViolation:
-                conn.rollback()
-                continue
+            categoria = ""
+            if col_categoria is not None and row[col_categoria] is not None:
+                raw = row[col_categoria]
+                ejemplo_valor = repr(raw)
+                val = str(raw).strip().lower()
+                if "novato" in val:
+                    categoria = "Novato"
+                elif "profesional" in val:
+                    categoria = "Profesional"
+                else:
+                    ejemplo_valor = f"'{raw}' (no coincide)"
+            cur.execute("""
+                INSERT INTO corredores (dorsal, nombre, categoria) VALUES (%s, %s, %s)
+                ON CONFLICT (dorsal) DO UPDATE SET nombre = %s, categoria = %s,
+                tiempo_llegada = NULL, posicion = NULL, posicion_categoria = NULL
+            """, (dorsal, nombre, categoria, nombre, categoria))
+            conn.commit()
+            cont += 1
         cur.close()
         conn.close()
-        return jsonify(mensaje=f"Se importaron {cont} corredores.")
+        info_cat = f" Columna: '{header_names[col_categoria] if col_categoria is not None else 'no detectada'}'."
+        info_val = f" Valor ejemplo: {ejemplo_valor}." if ejemplo_valor else ""
+        return jsonify(mensaje=f"Se importaron {cont} corredores.{info_cat}{info_val}")
     except Exception as e:
         print("importar excel error:", e)
         return jsonify(error="Error al procesar el Excel"), 500
+
+@app.route("/api/estadisticas")
+def api_estadisticas():
+    init_db()
+    conn = get_db()
+    if not conn:
+        return jsonify(error="Base de datos no disponible"), 503
+    try:
+        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur.execute("SELECT COUNT(*) as total FROM corredores")
+        total = cur.fetchone()["total"]
+        cur.execute("SELECT COUNT(*) as total FROM corredores WHERE tiempo_llegada IS NOT NULL")
+        llegados = cur.fetchone()["total"]
+        pendientes = total - llegados
+        cur.execute("SELECT CASE WHEN categoria = '' OR categoria IS NULL THEN 'Sin categoría' ELSE INITCAP(categoria) END as cat, COUNT(*) as cnt FROM corredores GROUP BY cat ORDER BY cat")
+        rows = cur.fetchall()
+        por_categoria = {}
+        for r in rows:
+            por_categoria[r["cat"]] = r["cnt"]
+        cur.execute("SELECT CASE WHEN categoria = '' OR categoria IS NULL THEN 'Sin categoría' ELSE INITCAP(categoria) END as cat, COUNT(*) as cnt FROM corredores WHERE tiempo_llegada IS NOT NULL GROUP BY cat ORDER BY cat")
+        rows = cur.fetchall()
+        llegados_por_categoria = {}
+        for r in rows:
+            llegados_por_categoria[r["cat"]] = r["cnt"]
+        cur.execute("SELECT hora_inicio FROM carrera WHERE id = 1")
+        inicio_row = cur.fetchone()
+        inicio = inicio_row["hora_inicio"] if inicio_row else None
+        tiempo_promedio = {}
+        if inicio and llegados > 0:
+            cur.execute("SELECT CASE WHEN categoria = '' OR categoria IS NULL THEN 'Sin categoría' ELSE INITCAP(categoria) END as cat, AVG(EXTRACT(EPOCH FROM (tiempo_llegada - %s))) as avg_secs FROM corredores WHERE tiempo_llegada IS NOT NULL GROUP BY cat", (inicio,))
+            for r in cur.fetchall():
+                cat = r["cat"]
+                secs = int(r["avg_secs"])
+                h, resto = divmod(secs, 3600)
+                m, s = divmod(resto, 60)
+                tiempo_promedio[cat] = f"{h}h {m}m {s}s"
+        cur.execute("SELECT iniciada FROM carrera WHERE id = 1")
+        c = cur.fetchone()
+        cur.close()
+        conn.close()
+        return jsonify(
+            total=total,
+            por_categoria=por_categoria,
+            llegados=llegados,
+            pendientes=pendientes,
+            llegados_por_categoria=llegados_por_categoria,
+            tiempo_promedio=tiempo_promedio,
+            carrera_iniciada=c["iniciada"] if c else False,
+            hora_inicio=inicio.isoformat() if inicio else None
+        )
+    except Exception as e:
+        print("estadisticas error:", e)
+        return jsonify(error="Error al obtener estadísticas"), 500
 
 @app.route("/api/borrar", methods=["POST"])
 def api_borrar():
@@ -566,19 +779,19 @@ def api_reporte():
             cur.close()
             conn.close()
             return jsonify(error="La carrera no ha iniciado."), 400
-        cur.execute("SELECT posicion, dorsal, nombre, categoria, tiempo_llegada FROM corredores WHERE tiempo_llegada IS NOT NULL ORDER BY posicion")
+        cur.execute("SELECT posicion, posicion_categoria, dorsal, nombre, categoria, tiempo_llegada FROM corredores WHERE tiempo_llegada IS NOT NULL ORDER BY categoria, posicion_categoria")
         rows = cur.fetchall()
         cur.close()
         conn.close()
         wb = openpyxl.Workbook()
         ws = wb.active
         ws.title = "Reporte Burrotón"
-        ws.append(["Posición", "Núm.", "Nombre", "Categoría", "Tiempo Llegada", "Tiempo Transcurrido"])
+        ws.append(["Posición Gral", "Pos. Categoría", "Núm.", "Nombre", "Categoría", "Tiempo Llegada", "Tiempo Transcurrido"])
         for r in rows:
-            trans = r[4] - inicio
+            trans = r[5] - inicio
             h, resto = divmod(int(trans.total_seconds()), 3600)
             m, s = divmod(resto, 60)
-            ws.append([r[0], r[1], r[2], r[3], r[4].isoformat(), f"{h}h {m}m {s}s"])
+            ws.append([r[0], r[1], r[2], r[3], r[4] or "Sin categoría", r[5].isoformat(), f"{h}h {m}m {s}s"])
         buf = io.BytesIO()
         wb.save(buf)
         buf.seek(0)
