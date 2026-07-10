@@ -60,7 +60,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxyge
 .header img:hover { transform: scale(1.03); }
 .header h1 { font-size: 2.2rem; color: #2c5f8a; text-align: center; flex: 1; font-weight: 900; letter-spacing: .01em; font-family: 'Playfair Display', Georgia, serif; text-shadow: 0 2px 4px rgba(44, 62, 106, .08); animation: fadeIn 1s ease .2s both; }
 .barra { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
-.barra button, .barra input, .barra select { padding: 8px 14px; font-size: .875rem; border-radius: 10px; border: 1px solid #b8cce8; outline: none; font-family: inherit; }
+.barra button, .barra input, .barra select { padding: 10px 18px; font-size: .875rem; border-radius: 10px; border: 1px solid #b8cce8; outline: none; font-family: inherit; }
 .barra input:focus { border-color: #4a7fc8; box-shadow: 0 0 0 3px rgba(74, 127, 200, .22), 0 0 0 1px rgba(74, 127, 200, .08); background: #fff; }
 .barra select:focus { border-color: #4a7fc8; box-shadow: 0 0 0 3px rgba(74, 127, 200, .22), 0 0 0 1px rgba(74, 127, 200, .08); }
 .barra button { background: #4a7fc8; color: #fff; border: none; cursor: pointer; font-weight: 600; transition: all .2s cubic-bezier(.4,0,.2,1); position: relative; overflow: hidden; }
@@ -88,10 +88,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxyge
 .estado.parada { background: #fff8e0; color: #8a6a30; border-color: #f0d080; }
 .estado.andando { background: #d0f0dc; color: #2a7a48; border-color: #80d8a0; }
 .buscar-wrap { margin-bottom: 14px; position: relative; animation: slideUp .45s ease-out .28s both; }
-.buscar-wrap input { width: 100%; padding: 12px 16px 12px 40px; font-size: .9rem; border-radius: 12px; border: 1px solid #d0dce8; outline: none; font-family: inherit; background: #f7faff; transition: all .25s ease; color: #2c3e6a; }
+.buscar-wrap input { width: 100%; padding: 14px 18px 14px 44px; font-size: .9rem; border-radius: 12px; border: 1px solid #d0dce8; outline: none; font-family: inherit; background: #f7faff; transition: all .25s ease; color: #2c3e6a; }
 .buscar-wrap input:focus { border-color: #4a7fc8; box-shadow: 0 0 0 3px rgba(74, 127, 200, .18), 0 2px 8px rgba(44, 62, 106, .06); background: #fff; }
 .buscar-wrap input::placeholder { color: #8a9ab0; font-weight: 400; }
-.buscar-wrap::before { content: '🔍'; position: absolute; left: 13px; top: 50%; transform: translateY(-50%); font-size: .85rem; opacity: .5; pointer-events: none; }
+.buscar-wrap::before { content: '🔍'; position: absolute; left: 16px; top: 50%; transform: translateY(-50%); font-size: .85rem; opacity: .5; pointer-events: none; }
 table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: .85rem; }
 th, td { padding: 11px 14px; text-align: left; border-bottom: 1px solid #dce6f0; }
 th { background: #d6e4f5; font-weight: 700; color: #2c5f8a; font-size: .8rem; text-transform: uppercase; letter-spacing: .05em; }
@@ -166,11 +166,11 @@ td button:active { transform: scale(.88); }
   .header { gap: 12px; margin-bottom: 20px; }
   .header h1 { font-size: 1.3rem; }
   .header img { height: 70px; }
-  .barra button, .barra input, .barra select { font-size: .8rem; padding: 7px 10px; }
+  .barra button, .barra input, .barra select { font-size: .8rem; padding: 9px 14px; }
   .barra input { min-width: 80px; }
   .seccion { padding: 18px 20px; }
-  .buscar-wrap input { padding: 10px 14px 10px 36px; font-size: .85rem; }
-  .buscar-wrap::before { left: 11px; font-size: .8rem; }
+  .buscar-wrap input { padding: 12px 16px 12px 38px; font-size: .85rem; }
+  .buscar-wrap::before { left: 13px; font-size: .8rem; }
   .th, td { padding: 8px 10px; }
 }
 </style>
