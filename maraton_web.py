@@ -3,7 +3,7 @@ import os
 import psycopg2
 import psycopg2.extras
 from datetime import datetime
-from flask import Flask, request, jsonify, render_template_string, send_file
+from flask import Flask, request, jsonify, render_template_string, send_file, g
 import openpyxl
 
 app = Flask(__name__)
@@ -12,13 +12,24 @@ app.static_folder = "static"
 DB_URL = os.environ.get("DATABASE_URL", "postgresql://maraton_db_yu80_user:PGKNIB3F5HTynSqz7Vx6x01vJcQVG3bD@dpg-d97vq9qabeoc739aqnmg-a.virginia-postgres.render.com/maraton_db_yu80?sslmode=require")
 
 def get_db():
-    try:
-        conn = psycopg2.connect(DB_URL, connect_timeout=10)
-        conn.autocommit = True
-        return conn
-    except Exception as e:
-        print("DB error:", e)
-        return None
+    if 'db' not in g:
+        try:
+            conn = psycopg2.connect(DB_URL, connect_timeout=10)
+            conn.autocommit = True
+            g.db = conn
+        except Exception as e:
+            print("DB error:", e)
+            return None
+    return g.db
+
+@app.teardown_request
+def cerrar_db(exception=None):
+    db = g.pop('db', None)
+    if db is not None:
+        try:
+            db.close()
+        except:
+            pass
 
 def init_db():
     conn = get_db()
@@ -36,8 +47,6 @@ def init_db():
         cur.close()
     except Exception as e:
         print("init_db error:", e)
-    finally:
-        conn.close()
 
 LOGO_IZQ = "/static/BURROTON 2026.png"
 LOGO_DER = "/static/LOGO SAN BENITO JOSE.jpg"
@@ -171,7 +180,7 @@ td button:active { transform: scale(.88); }
   .seccion { padding: 18px 20px; }
   .buscar-wrap input { padding: 12px 16px 12px 38px; font-size: .85rem; }
   .buscar-wrap::before { left: 13px; font-size: .8rem; }
-  .th, td { padding: 8px 10px; }
+  th, td { padding: 8px 10px; }
 }
 </style>
 </head>
@@ -203,9 +212,15 @@ td button:active { transform: scale(.88); }
       <div id="estado-carrera" class="estado parada">⏸ Carrera no iniciada</div>
       <button id="btn-iniciar" class="verde" onclick="iniciar()">Iniciar carrera</button>
       <button id="btn-finalizar" class="rojo" onclick="finalizar()" style="display:none">Finalizar carrera</button>
+      <button id="btn-limpiar" class="" onclick="limpiar()" style="display:none">Limpiar datos</button>
     </div>
     <div class="fila espaciada">
-      <input id="llegada-input" placeholder="Número del que llega">
+      <select id="modo-registro" onchange="cambioModo(this)">
+        <option value="">Todos</option>
+        <option value="Novato">Solo Novatos</option>
+        <option value="Profesional">Solo Profesionales</option>
+      </select>
+      <input id="llegada-input" placeholder="Número dorsal">
       <button class="verde" onclick="llegada(this)">Registrar llegada</button>
     </div>
   </div>
@@ -244,17 +259,24 @@ td button:active { transform: scale(.88); }
 </div>
 <script>
 let filtroActual = '';
+let enviando = false;
+function esc(t) { return String(t).replace(/[&<>"']/g, function(m) { return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]; }); }
 
 function filtrarCategoria(cat) {
   filtroActual = cat;
   document.querySelectorAll('.filtro-cat').forEach(b => b.classList.toggle('activo', b.dataset.cat === cat));
   cargar();
 }
+function cambioModo(el) {
+  const val = el.value;
+  const cat = val === "Novato" ? "Novato" : val === "Profesional" ? "Profesional" : "";
+  filtrarCategoria(cat);
+}
 
 function cargar() {
   const q = document.getElementById('buscar-input').value.trim();
   const url = q ? '/api/buscar?q=' + encodeURIComponent(q) : '/api/datos';
-  fetch(url).then(r=>r.json()).then(d=>{
+  fetch(url).then(r=>{ if(!r.ok) throw new Error('Error de conexión'); return r.json(); }).then(d=>{
     const tbody = document.getElementById('tabla');
     tbody.innerHTML = '';
     let corredores = d.corredores||[];
@@ -269,7 +291,7 @@ function cargar() {
       const posCat = c.posicion_categoria ? '#' + c.posicion_categoria : '—';
       const cat = c.categoria || '';
       const badge = cat ? '<span class="badge-' + cat.toLowerCase() + '">' + cat + '</span>' : '<span class="badge-none">—</span>';
-      tr.innerHTML = '<td>' + c.dorsal + '</td><td>' + c.nombre + '</td><td>' + badge + '</td><td>' + llegada + '</td><td>' + posCat + '</td><td></td>';
+      tr.innerHTML = '<td>' + esc(c.dorsal) + '</td><td>' + esc(c.nombre) + '</td><td>' + badge + '</td><td>' + llegada + '</td><td>' + esc(posCat) + '</td><td></td>';
       const btn = document.createElement('button');
       btn.className = 'rojo';
       btn.style.cssText = 'padding:4px 10px;font-size:.8rem';
@@ -287,13 +309,15 @@ function cargar() {
       est.className = 'estado andando';
       document.getElementById('btn-iniciar').disabled = true;
       document.getElementById('btn-finalizar').style.display = '';
+      document.getElementById('btn-limpiar').style.display = 'none';
     } else {
       est.textContent = '⏸ Carrera no iniciada';
       est.className = 'estado parada';
       document.getElementById('btn-iniciar').disabled = false;
       document.getElementById('btn-finalizar').style.display = 'none';
+      document.getElementById('btn-limpiar').style.display = '';
     }
-  });
+  }).catch(e => { if(e.message !== 'Error de conexión') mostrarModal('Error de red'); });
 }
 function toast(msg) {
   const el = document.getElementById('toast');
@@ -324,7 +348,7 @@ function confirmarModal(msg) {
 }
 function _fetch(url, opts, btn) {
   if (btn) btn.disabled = true;
-  return fetch(url, opts).then(r=>r.json()).finally(() => { if(btn) btn.disabled = false; });
+  return fetch(url, opts).then(r=>{ if(!r.ok) throw new Error('Error de conexión'); return r.json(); }).catch(e => { mostrarModal(e.message); throw e; }).finally(() => { if(btn) btn.disabled = false; });
 }
 function registrar(btn) {
   const dorsal = document.getElementById('dorsal-input').value.trim();
@@ -355,15 +379,25 @@ function iniciar() {
   _fetch('/api/iniciar', {method:'POST'}, btn).then(d=> { if(d.error) mostrarModal(d.error); else { toast('Carrera iniciada'); cargar(); } });
 }
 function llegada(btn) {
+  if (enviando) return;
   const dorsal = document.getElementById('llegada-input').value.trim();
   if (!dorsal) return mostrarModal('Ingresa un número.');
-  _fetch('/api/llegada', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({dorsal})}, btn)
-    .then(d=> { if(d.error) mostrarModal(d.error); else { document.getElementById('llegada-input').value=''; cargar(); if(d.mensaje) toast(d.mensaje); } });
+  enviando = true;
+  const categoria = document.getElementById('modo-registro').value;
+  _fetch('/api/llegada', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({dorsal, categoria})}, btn)
+    .then(d=> { if(d.error) mostrarModal(d.error); else { document.getElementById('llegada-input').value=''; cargar(); if(d.mensaje) toast(d.mensaje); } })
+    .finally(() => { enviando = false; });
 }
 function finalizar() {
   confirmarModal('¿Finalizar la carrera?').then(r => {
     if (!r) return;
-    fetch('/api/finalizar', {method:'POST'}).then(r=>r.json()).then(d=> { if(d.error) mostrarModal(d.error); else toast('Carrera finalizada'); cargar(); });
+    fetch('/api/finalizar', {method:'POST'}).then(r=>r.json()).then(d=> { if(d.error) mostrarModal(d.error); else toast('Carrera finalizada'); cargar(); }).catch(e => mostrarModal('Error de red'));
+  });
+}
+function limpiar() {
+  confirmarModal('¿Borrar todos los corredores y reiniciar la carrera?').then(r => {
+    if (!r) return;
+    fetch('/api/limpiar', {method:'POST'}).then(r=>r.json()).then(d=> { if(d.error) mostrarModal(d.error); else toast('Datos eliminados'); cargar(); }).catch(e => mostrarModal('Error de red'));
   });
 }
 function resultados() {
@@ -382,7 +416,7 @@ function resultados() {
       cats[cat].forEach(c => { txt += '  #' + c.pos_cat + '  ' + c.dorsal + '  ' + c.nombre + '  ' + c.tiempo + '\\n'; });
     });
     mostrarModal(txt);
-  });
+  }).catch(e => mostrarModal('Error de red'));
 }
 function reporte() {
   window.location.href = '/api/reporte';
@@ -433,13 +467,13 @@ function estadisticas() {
     document.getElementById('modal-botones').innerHTML = '<button class="btn-ok" onclick="cerrarModal()">Cerrar</button>';
     modal.classList.add('show');
     document.querySelector('.modal-card').classList.add('estadisticas');
-  });
+  }).catch(e => mostrarModal('Error de red'));
 }
 function borrar(dorsal) {
   confirmarModal('¿Borrar corredor número ' + dorsal + '?').then(r => {
     if (!r) return;
     fetch('/api/borrar', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({dorsal}) })
-      .then(r=>r.json()).then(d=> { if(d.error) mostrarModal(d.error); else toast('Corredor eliminado'); cargar(); });
+      .then(r=>r.json()).then(d=> { if(d.error) mostrarModal(d.error); else toast('Corredor eliminado'); cargar(); }).catch(e => mostrarModal('Error de red'));
   });
 }
 function importarExcel(file) {
@@ -478,7 +512,8 @@ def api_datos():
         cur.execute("SELECT iniciada, hora_inicio FROM carrera WHERE id = 1")
         c = cur.fetchone()
         cur.close()
-        conn.close()
+        if not c:
+            return jsonify(carrera_iniciada=False, hora_inicio=None, corredores=[])
         return jsonify(carrera_iniciada=c["iniciada"], hora_inicio=c["hora_inicio"].isoformat() if c["hora_inicio"] else None, corredores=corredores)
     except Exception as e:
         print("datos error:", e)
@@ -493,7 +528,7 @@ def api_buscar():
         return jsonify(carrera_iniciada=False, hora_inicio=None, corredores=[])
     try:
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-        cur.execute("SELECT dorsal, nombre, categoria, tiempo_llegada, posicion, posicion_categoria FROM corredores WHERE dorsal ILIKE %s OR nombre ILIKE %s ORDER BY id", (f"%{q}%", f"%{q}%"))
+        cur.execute("SELECT dorsal, nombre, categoria, tiempo_llegada, posicion, posicion_categoria FROM corredores WHERE dorsal ILIKE %s OR nombre ILIKE %s ORDER BY id LIMIT 200", (f"%{q}%", f"%{q}%"))
         rows = cur.fetchall()
         corredores = []
         for r in rows:
@@ -501,7 +536,8 @@ def api_buscar():
         cur.execute("SELECT iniciada, hora_inicio FROM carrera WHERE id = 1")
         c = cur.fetchone()
         cur.close()
-        conn.close()
+        if not c:
+            return jsonify(carrera_iniciada=False, hora_inicio=None, corredores=[])
         return jsonify(carrera_iniciada=c["iniciada"], hora_inicio=c["hora_inicio"].isoformat() if c["hora_inicio"] else None, corredores=corredores)
     except Exception as e:
         print("buscar error:", e)
@@ -533,11 +569,9 @@ def api_registrar():
             except psycopg2.errors.UniqueViolation:
                 conn.rollback()
                 cur.close()
-                conn.close()
                 return jsonify(error="Ya existe un corredor con ese número.", duplicado=True), 409
         conn.commit()
         cur.close()
-        conn.close()
         return jsonify(ok=True)
     except Exception as e:
         print("registrar error:", e)
@@ -549,21 +583,21 @@ def api_iniciar():
     conn = get_db()
     if not conn:
         return jsonify(error="Base de datos no disponible"), 503
+    conn.autocommit = False
     try:
         cur = conn.cursor()
+        cur.execute("SELECT id FROM carrera WHERE id = 1 FOR UPDATE")
         cur.execute("SELECT iniciada FROM carrera WHERE id = 1")
-        row = cur.fetchone()
-        if row[0]:
-            cur.close()
-            conn.close()
+        if cur.fetchone()[0]:
+            conn.autocommit = True; cur.close()
             return jsonify(error="La carrera ya está iniciada."), 400
         ahora = datetime.now()
         cur.execute("UPDATE carrera SET iniciada = TRUE, hora_inicio = %s WHERE id = 1", (ahora,))
         conn.commit()
-        cur.close()
-        conn.close()
+        conn.autocommit = True; cur.close()
         return jsonify(ok=True)
     except Exception as e:
+        conn.rollback(); conn.autocommit = True
         print("iniciar error:", e)
         return jsonify(error="Error al iniciar carrera"), 500
 
@@ -571,43 +605,47 @@ def api_iniciar():
 def api_llegada():
     init_db()
     dorsal = request.json.get("dorsal", "").strip()
+    categoria_filtro = request.json.get("categoria", "").strip()
     conn = get_db()
     if not conn:
         return jsonify(error="Base de datos no disponible"), 503
+    conn.autocommit = False
     try:
         cur = conn.cursor()
         cur.execute("SELECT iniciada FROM carrera WHERE id = 1")
         if not cur.fetchone()[0]:
-            cur.close()
-            conn.close()
+            conn.autocommit = True; cur.close()
             return jsonify(error="La carrera no ha iniciado."), 400
         cur.execute("SELECT id, nombre, categoria, tiempo_llegada FROM corredores WHERE dorsal = %s", (dorsal,))
         row = cur.fetchone()
         if not row:
-            cur.close()
-            conn.close()
+            conn.autocommit = True; cur.close()
             return jsonify(error="Número no encontrado."), 404
         if row[3]:
-            cur.close()
-            conn.close()
+            conn.autocommit = True; cur.close()
             return jsonify(error=f"{row[1]} ya llegó."), 400
+        if categoria_filtro and (row[2] or "") != categoria_filtro:
+            conn.autocommit = True; cur.close()
+            return jsonify(error=f"{row[1]} es {(row[2] or 'sin categoría')}, no {categoria_filtro}."), 400
         ahora = datetime.now()
         cat = row[2] or "Sin categoría"
+        cur.execute("SELECT id FROM carrera WHERE id = 1 FOR UPDATE")
         cur.execute("SELECT COUNT(*) FROM corredores WHERE tiempo_llegada IS NOT NULL")
         posicion = cur.fetchone()[0] + 1
-        cur.execute("SELECT COUNT(*) FROM corredores WHERE tiempo_llegada IS NOT NULL AND categoria = %s", (row[2],))
+        cur.execute("SELECT COUNT(*) FROM corredores WHERE tiempo_llegada IS NOT NULL AND COALESCE(categoria, '') = COALESCE(%s, '')", (row[2],))
         posicion_categoria = cur.fetchone()[0] + 1
         cur.execute("UPDATE corredores SET tiempo_llegada = %s, posicion = %s, posicion_categoria = %s WHERE id = %s", (ahora, posicion, posicion_categoria, row[0]))
         conn.commit()
         cur.execute("SELECT hora_inicio FROM carrera WHERE id = 1")
         inicio = cur.fetchone()[0]
-        trans = ahora - inicio
+        trans = abs(ahora - inicio)
         h, resto = divmod(int(trans.total_seconds()), 3600)
         m, s = divmod(resto, 60)
-        cur.close()
-        conn.close()
+        conn.autocommit = True; cur.close()
         return jsonify(ok=True, mensaje=f"¡{row[1]} llegó! #{posicion_categoria} en {cat} — {h}h {m}m {s}s")
     except Exception as e:
+        conn.rollback()
+        conn.autocommit = True
         print("llegada error:", e)
         return jsonify(error="Error al registrar llegada"), 500
 
@@ -623,22 +661,19 @@ def api_resultados():
         inicio = cur.fetchone()[0]
         if not inicio:
             cur.close()
-            conn.close()
             return jsonify(error="La carrera no ha iniciado."), 400
-        cur.execute("SELECT dorsal, nombre, categoria, posicion, posicion_categoria, tiempo_llegada FROM corredores WHERE tiempo_llegada IS NOT NULL ORDER BY categoria, posicion_categoria")
+        cur.execute("SELECT dorsal, nombre, categoria, posicion, posicion_categoria, tiempo_llegada FROM corredores WHERE tiempo_llegada IS NOT NULL ORDER BY COALESCE(categoria, ''), posicion_categoria, id")
         rows = cur.fetchall()
         if not rows:
             cur.close()
-            conn.close()
             return jsonify(error="Aún no hay llegadas."), 400
         res = []
         for r in rows:
-            trans = r[5] - inicio
+            trans = abs(r[5] - inicio)
             h, resto = divmod(int(trans.total_seconds()), 3600)
             m, s = divmod(resto, 60)
             res.append({"pos": r[3], "pos_cat": r[4], "dorsal": r[0], "nombre": r[1], "categoria": r[2] or "Sin categoría", "tiempo": f"{h}h {m}m {s}s"})
         cur.close()
-        conn.close()
         return jsonify(llegados=res)
     except Exception as e:
         print("resultados error:", e)
@@ -650,19 +685,20 @@ def api_finalizar():
     conn = get_db()
     if not conn:
         return jsonify(error="Base de datos no disponible"), 503
+    conn.autocommit = False
     try:
         cur = conn.cursor()
+        cur.execute("SELECT id FROM carrera WHERE id = 1 FOR UPDATE")
         cur.execute("SELECT iniciada FROM carrera WHERE id = 1")
         if not cur.fetchone()[0]:
-            cur.close()
-            conn.close()
+            conn.autocommit = True; cur.close()
             return jsonify(error="La carrera no está iniciada."), 400
         cur.execute("UPDATE carrera SET iniciada = FALSE WHERE id = 1")
         conn.commit()
-        cur.close()
-        conn.close()
+        conn.autocommit = True; cur.close()
         return jsonify(ok=True)
     except Exception as e:
+        conn.rollback(); conn.autocommit = True
         print("finalizar error:", e)
         return jsonify(error="Error al finalizar carrera"), 500
 
@@ -720,7 +756,6 @@ def api_importar_excel():
             conn.commit()
             cont += 1
         cur.close()
-        conn.close()
         info_cat = f" Columna: '{header_names[col_categoria] if col_categoria is not None else 'no detectada'}'."
         info_val = f" Valor ejemplo: {ejemplo_valor}." if ejemplo_valor else ""
         return jsonify(mensaje=f"Se importaron {cont} corredores.{info_cat}{info_val}")
@@ -766,7 +801,6 @@ def api_estadisticas():
         cur.execute("SELECT iniciada FROM carrera WHERE id = 1")
         c = cur.fetchone()
         cur.close()
-        conn.close()
         return jsonify(
             total=total,
             por_categoria=por_categoria,
@@ -781,6 +815,26 @@ def api_estadisticas():
         print("estadisticas error:", e)
         return jsonify(error="Error al obtener estadísticas"), 500
 
+@app.route("/api/limpiar", methods=["POST"])
+def api_limpiar():
+    init_db()
+    conn = get_db()
+    if not conn:
+        return jsonify(error="Base de datos no disponible"), 503
+    conn.autocommit = False
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT id FROM carrera WHERE id = 1 FOR UPDATE")
+        cur.execute("DELETE FROM corredores")
+        cur.execute("UPDATE carrera SET iniciada = FALSE, hora_inicio = NULL WHERE id = 1")
+        conn.commit()
+        conn.autocommit = True; cur.close()
+        return jsonify(ok=True)
+    except Exception as e:
+        conn.rollback(); conn.autocommit = True
+        print("limpiar error:", e)
+        return jsonify(error="Error al limpiar datos"), 500
+
 @app.route("/api/borrar", methods=["POST"])
 def api_borrar():
     init_db()
@@ -790,14 +844,24 @@ def api_borrar():
     conn = get_db()
     if not conn:
         return jsonify(error="Base de datos no disponible"), 503
+    conn.autocommit = False
     try:
         cur = conn.cursor()
+        cur.execute("SELECT id FROM carrera WHERE id = 1 FOR UPDATE")
         cur.execute("DELETE FROM corredores WHERE dorsal = %s", (dorsal,))
+        cur.execute("SELECT id FROM corredores WHERE tiempo_llegada IS NOT NULL ORDER BY tiempo_llegada")
+        for i, row in enumerate(cur.fetchall(), 1):
+            cur.execute("UPDATE corredores SET posicion = %s WHERE id = %s", (i, row[0]))
+        cur.execute("SELECT DISTINCT COALESCE(categoria, '') as cat FROM corredores WHERE tiempo_llegada IS NOT NULL")
+        for cat_row in cur.fetchall():
+            cur.execute("SELECT id FROM corredores WHERE tiempo_llegada IS NOT NULL AND COALESCE(categoria, '') = %s ORDER BY tiempo_llegada", (cat_row[0],))
+            for i, row in enumerate(cur.fetchall(), 1):
+                cur.execute("UPDATE corredores SET posicion_categoria = %s WHERE id = %s", (i, row[0]))
         conn.commit()
-        cur.close()
-        conn.close()
+        conn.autocommit = True; cur.close()
         return jsonify(ok=True)
     except Exception as e:
+        conn.rollback(); conn.autocommit = True
         print("borrar error:", e)
         return jsonify(error="Error al borrar"), 500
 
@@ -813,21 +877,38 @@ def api_reporte():
         inicio = cur.fetchone()[0]
         if not inicio:
             cur.close()
-            conn.close()
             return jsonify(error="La carrera no ha iniciado."), 400
-        cur.execute("SELECT posicion, posicion_categoria, dorsal, nombre, categoria, tiempo_llegada FROM corredores WHERE tiempo_llegada IS NOT NULL ORDER BY categoria, posicion_categoria")
+        cur.execute("SELECT posicion, posicion_categoria, dorsal, nombre, categoria, tiempo_llegada FROM corredores WHERE tiempo_llegada IS NOT NULL ORDER BY COALESCE(categoria, ''), posicion_categoria, id")
         rows = cur.fetchall()
         cur.close()
-        conn.close()
+        from openpyxl.styles import Font
         wb = openpyxl.Workbook()
         ws = wb.active
         ws.title = "Reporte Burrotón"
-        ws.append(["Posición Gral", "Pos. Categoría", "Núm.", "Nombre", "Categoría", "Tiempo Llegada", "Tiempo Transcurrido"])
-        for r in rows:
-            trans = r[5] - inicio
-            h, resto = divmod(int(trans.total_seconds()), 3600)
-            m, s = divmod(resto, 60)
-            ws.append([r[0], r[1], r[2], r[3], r[4] or "Sin categoría", r[5].isoformat(), f"{h}h {m}m {s}s"])
+        cats_order = ["Novato", "Profesional"]
+        existing = sorted(set(r[4] or "Sin categoría" for r in rows))
+        for c in existing:
+            if c not in cats_order:
+                cats_order.append(c)
+        headers = ["Posición Gral", "Pos. Categoría", "Núm.", "Nombre", "Tiempo Llegada", "Tiempo Transcurrido"]
+        primero = True
+        for cat in cats_order:
+            cat_rows = [r for r in rows if (r[4] or "Sin categoría") == cat]
+            if not cat_rows:
+                continue
+            if not primero:
+                ws.append([])
+            primero = False
+            ws.append([f"{cat.upper()}"])
+            ws.cell(row=ws.max_row, column=1).font = Font(bold=True, size=12)
+            ws.append(headers)
+            for cell in ws[ws.max_row]:
+                cell.font = Font(bold=True)
+            for r in cat_rows:
+                trans = abs(r[5] - inicio)
+                h, resto = divmod(int(trans.total_seconds()), 3600)
+                m, s = divmod(resto, 60)
+                ws.append([r[0], r[1], r[2], r[3], r[5].isoformat(), f"{h}h {m}m {s}s"])
         buf = io.BytesIO()
         wb.save(buf)
         buf.seek(0)
