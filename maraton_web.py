@@ -49,7 +49,7 @@ def init_db():
         print("init_db error:", e)
 
 LOGO_IZQ = "/static/BURROTON 2026.png"
-LOGO_DER = "/static/LOGO SAN BENITO JOSE.jpg"
+LOGO_DER = "/static/LOGO SAN BENITO JOSE.png"
 
 HTML = """<!DOCTYPE html>
 <html lang="es">
