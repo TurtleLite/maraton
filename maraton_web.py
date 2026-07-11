@@ -70,13 +70,13 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxyge
 ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,.3); }
 body::before { content: ''; position: fixed; inset: 0; background: radial-gradient(ellipse at 20% 50%, rgba(74,127,200,.12) 0%, transparent 70%), radial-gradient(ellipse at 80% 20%, rgba(200,149,62,.06) 0%, transparent 60%); pointer-events: none; z-index: 0; }
 .container { width: 100%; max-width: 1080px; min-height: 100vh; margin: 0 auto; padding: 0; background: #f5f7fb; box-shadow: 0 0 60px rgba(0,0,0,.2); animation: fadeUp .5s ease-out; position: relative; z-index: 1; display: flex; flex-direction: column; }
-.header-wrap { background: linear-gradient(135deg, #2a4060 0%, #3a5a80 50%, #2a4060 100%); padding: 28px 44px 20px; position: relative; overflow: hidden; }
+.header-wrap { background: #e4ecf4; padding: 28px 44px 20px; position: relative; overflow: hidden; }
 .header-wrap::before { content: ''; position: absolute; top: -60%; right: -20%; width: 500px; height: 500px; border-radius: 50%; background: radial-gradient(circle, rgba(74,127,200,.08) 0%, transparent 70%); pointer-events: none; }
 .header-wrap::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(255,255,255,.1), transparent); }
 .header { display: flex; align-items: center; justify-content: space-between; gap: 24px; position: relative; z-index: 1; }
-.header img { height: 130px; width: auto; object-fit: contain; transition: transform .4s cubic-bezier(.34,1.56,.64,1); filter: drop-shadow(0 2px 8px rgba(0,0,0,.2)); }
+.header img { height: 130px; width: auto; object-fit: contain; transition: transform .4s cubic-bezier(.34,1.56,.64,1); filter: drop-shadow(0 2px 6px rgba(44, 62, 106, .1)); }
 .header img:hover { transform: scale(1.06); }
-.header h1 { font-size: 2rem; color: #e8f0fe; text-align: center; flex: 1; font-weight: 900; letter-spacing: .02em; font-family: 'Playfair Display', Georgia, serif; text-shadow: 0 2px 12px rgba(0,0,0,.2); animation: fadeIn 1s ease .2s both; line-height: 1.2; }
+.header h1 { font-size: 2rem; color: #2c5f8a; text-align: center; flex: 1; font-weight: 900; letter-spacing: .02em; font-family: 'Playfair Display', Georgia, serif; text-shadow: 0 2px 8px rgba(44, 62, 106, .08); animation: fadeIn 1s ease .2s both; line-height: 1.2; }
 .main-content { padding: 28px 44px 80px; flex: 1; }
 .barra { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
 .barra button, .barra input, .barra select { padding: 10px 18px; font-size: .875rem; border-radius: 10px; border: 1px solid #d0dce8; outline: none; font-family: inherit; }
