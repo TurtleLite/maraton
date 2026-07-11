@@ -62,17 +62,16 @@ HTML = """<!DOCTYPE html>
 <style>
 html, body { height: 100%; margin: 0; padding: 0; }
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif; background: #d0dce8; color: #1e2a3a; min-height: 100vh; display: flex; align-items: flex-start; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif; background: #f5f7fb; color: #1e2a3a; min-height: 100vh; }
 ::selection { background: #4a7fc8; color: #fff; }
 ::-webkit-scrollbar { width: 8px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(255,255,255,.2); border-radius: 4px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,.3); }
-body::before { content: ''; position: fixed; inset: 0; background: radial-gradient(ellipse at 20% 50%, rgba(74,127,200,.12) 0%, transparent 70%), radial-gradient(ellipse at 80% 20%, rgba(200,149,62,.06) 0%, transparent 60%); pointer-events: none; z-index: 0; }
-.container { width: 100%; max-width: 1080px; min-height: 100vh; margin: 0 auto; padding: 0; background: #f5f7fb; box-shadow: 0 0 60px rgba(0,0,0,.2); animation: fadeUp .5s ease-out; position: relative; z-index: 1; display: flex; flex-direction: column; }
+::-webkit-scrollbar-thumb { background: #c0d0e0; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #a8bcd0; }
+.container { width: 100%; min-height: 100vh; margin: 0; padding: 0; background: #f5f7fb; display: flex; flex-direction: column; }
 .header-wrap { background: #e4ecf4; padding: 28px 44px 20px; position: relative; overflow: hidden; }
 .header-wrap::before { content: ''; position: absolute; top: -60%; right: -20%; width: 500px; height: 500px; border-radius: 50%; background: radial-gradient(circle, rgba(74,127,200,.08) 0%, transparent 70%); pointer-events: none; }
-.header-wrap::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(255,255,255,.1), transparent); }
+.header-wrap::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(44, 62, 106, .08), transparent); }
 .header { display: flex; align-items: center; justify-content: space-between; gap: 24px; position: relative; z-index: 1; }
 .header img { height: 130px; width: auto; object-fit: contain; transition: transform .4s cubic-bezier(.34,1.56,.64,1); filter: drop-shadow(0 2px 6px rgba(44, 62, 106, .1)); }
 .header img:hover { transform: scale(1.06); }
@@ -131,7 +130,7 @@ td button:active { transform: scale(.88); }
 .contador { font-size: .8rem; color: #6a8aaa; margin-bottom: 12px; font-weight: 500; animation: slideUp .45s ease-out .3s both; }
 .toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(16px) scale(.95); background: #2a4060; color: #e8f0fe; padding: 14px 28px; border-radius: 14px; font-weight: 500; font-size: .9rem; box-shadow: 0 8px 32px rgba(0,0,0,.25); z-index: 999; opacity: 0; transition: all .35s cubic-bezier(.4,0,.2,1); pointer-events: none; }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
-.footer { position: fixed; bottom: 12px; left: 0; right: 0; display: flex; justify-content: space-between; padding: 0 16px; font-size: .65rem; color: rgba(255,255,255,.25); pointer-events: none; z-index: 0; letter-spacing: .08em; text-transform: uppercase; }
+.footer { position: fixed; bottom: 12px; left: 0; right: 0; display: flex; justify-content: space-between; padding: 0 16px; font-size: .65rem; color: rgba(44, 62, 106, .3); pointer-events: none; z-index: 0; letter-spacing: .08em; text-transform: uppercase; }
 .modal-overlay { position: fixed; inset: 0; background: rgba(10, 20, 30, .6); display: flex; align-items: center; justify-content: center; z-index: 1000; opacity: 0; transition: opacity .25s ease; pointer-events: none; backdrop-filter: blur(3px); }
 .modal-overlay.show { opacity: 1; pointer-events: auto; }
 .modal-card { background: #fff; border-radius: 18px; padding: 30px 34px; max-width: 440px; width: 92%; box-shadow: 0 16px 60px rgba(0,0,0,.25); text-align: center; transform: scale(.92) translateY(12px); transition: transform .35s cubic-bezier(.34,1.56,.64,1); position: relative; }
