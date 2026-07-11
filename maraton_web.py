@@ -62,7 +62,7 @@ HTML = """<!DOCTYPE html>
 <style>
 html, body { height: 100%; margin: 0; padding: 0; }
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif; background: linear-gradient(160deg, #2a4060 0%, #3a5a80 30%, #4a6a90 60%, #3a5a80 100%); color: #1e2a3a; min-height: 100vh; display: flex; align-items: flex-start; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif; background: #d0dce8; color: #1e2a3a; min-height: 100vh; display: flex; align-items: flex-start; }
 ::selection { background: #4a7fc8; color: #fff; }
 ::-webkit-scrollbar { width: 8px; }
 ::-webkit-scrollbar-track { background: transparent; }
