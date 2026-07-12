@@ -169,6 +169,12 @@ td button:active { transform: scale(.88); }
 .est-barra-fill.rojo { background: #b85048; }
 .est-barra-num { min-width: 36px; font-size: .85rem; font-weight: 600; color: #1c2838; text-align: right; }
 .est-tiempo { font-size: .8rem; color: #7a8a98; margin-left: 120px; margin-top: -2px; margin-bottom: 10px; }
+.conexion { display: inline-flex; align-items: center; gap: 6px; }
+.con-indicator { width: 8px; height: 8px; border-radius: 50%; display: inline-block; transition: background .3s ease; }
+.con-indicator.online { background: #3a8a5a; box-shadow: 0 0 4px #3a8a5a; }
+.con-indicator.offline { background: #b85048; box-shadow: 0 0 4px #b85048; }
+.con-indicator.checking { background: #c9953e; box-shadow: 0 0 4px #c9953e; animation: pulse 1s infinite; }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .4; } }
 @media (max-width: 700px) {
   .header-wrap { padding: 18px 20px 14px; }
   .header { gap: 12px; }
@@ -253,7 +259,7 @@ td button:active { transform: scale(.88); }
   </div>
 </div>
 </div>
-<div class="footer"><span>FIXTLE</span><span>TURTLELITE</span></div>
+<div class="footer"><span>FIXTLE</span><span class="conexion"><span class="con-indicator" id="con-indicator"></span><span id="con-text">Conectando...</span></span></div>
 <div id="toast" class="toast"></div>
 <div class="modal-overlay" id="modal">
   <div class="modal-card">
@@ -321,7 +327,7 @@ function cargar() {
       document.getElementById('btn-finalizar').style.display = 'none';
       document.getElementById('btn-limpiar').style.display = '';
     }
-  }).catch(e => { if(e.message !== 'Error de conexión') mostrarModal('Error de red'); });
+  }).catch(e => { if(e.message !== 'Error de conexión') mostrarModal('No se pudo conectar con el servidor. Verifica que el servidor esté encendido.'); });
 }
 function toast(msg) {
   const el = document.getElementById('toast');
@@ -350,9 +356,41 @@ function confirmarModal(msg) {
     window.resolveConfirm = resolve;
   });
 }
-function _fetch(url, opts, btn) {
-  if (btn) btn.disabled = true;
-  return fetch(url, opts).then(r=>{ if(!r.ok) throw new Error('Error de conexión'); return r.json(); }).catch(e => { mostrarModal(e.message); throw e; }).finally(() => { if(btn) btn.disabled = false; });
+async function _fetch(url, opts, btn, reintentos = 2) {
+  for (let i = 0; i <= reintentos; i++) {
+    if (btn) btn.disabled = true;
+    try {
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), 20000);
+      const r = await fetch(url, { ...opts, signal: ctrl.signal });
+      clearTimeout(timer);
+      if (!r.ok) {
+        if (r.status >= 500 && i < reintentos) {
+          btn && (btn.disabled = false);
+          await new Promise(r => setTimeout(r, 2000));
+          continue;
+        }
+        const msg = r.status === 404 ? 'Recurso no encontrado' : r.status === 409 ? 'Conflicto al guardar' : r.status === 503 ? 'Servicio no disponible' : 'Error de conexión';
+        throw new Error(msg);
+      }
+      return await r.json();
+    } catch (e) {
+      clearTimeout(timer);
+      if (i < reintentos && (e.name === 'AbortError' || e.name === 'TypeError')) {
+        btn && (btn.disabled = false);
+        if (i === 0) toast('Reintentando...');
+        await new Promise(r => setTimeout(r, 3000));
+        continue;
+      }
+      const msg = e.name === 'AbortError' || e.name === 'TypeError'
+        ? 'No se pudo conectar. El servidor puede estar despertando, intenta de nuevo.'
+        : e.message;
+      mostrarModal(msg);
+      throw e;
+    } finally {
+      if (btn) btn.disabled = false;
+    }
+  }
 }
 function registrar(btn) {
   const dorsal = document.getElementById('dorsal-input').value.trim();
@@ -395,13 +433,13 @@ function llegada(btn) {
 function finalizar() {
   confirmarModal('¿Finalizar la carrera?').then(r => {
     if (!r) return;
-    fetch('/api/finalizar', {method:'POST'}).then(r=>r.json()).then(d=> { if(d.error) mostrarModal(d.error); else toast('Carrera finalizada'); cargar(); }).catch(e => mostrarModal('Error de red'));
+    fetch('/api/finalizar', {method:'POST'}).then(r=>r.json()).then(d=> { if(d.error) mostrarModal(d.error); else toast('Carrera finalizada'); cargar(); }).catch(e => mostrarModal('No se pudo conectar con el servidor. Verifica que el servidor esté encendido.'));
   });
 }
 function limpiar() {
   confirmarModal('¿Borrar todos los corredores y reiniciar la carrera?').then(r => {
     if (!r) return;
-    fetch('/api/limpiar', {method:'POST'}).then(r=>r.json()).then(d=> { if(d.error) mostrarModal(d.error); else toast('Datos eliminados'); cargar(); }).catch(e => mostrarModal('Error de red'));
+    fetch('/api/limpiar', {method:'POST'}).then(r=>r.json()).then(d=> { if(d.error) mostrarModal(d.error); else toast('Datos eliminados'); cargar(); }).catch(e => mostrarModal('No se pudo conectar con el servidor. Verifica que el servidor esté encendido.'));
   });
 }
 function resultados() {
@@ -420,7 +458,7 @@ function resultados() {
       cats[cat].forEach(c => { txt += '  #' + c.pos_cat + '  ' + c.dorsal + '  ' + c.nombre + '  ' + c.tiempo + '\\n'; });
     });
     mostrarModal(txt);
-  }).catch(e => mostrarModal('Error de red'));
+  }).catch(e => mostrarModal('No se pudo conectar con el servidor. Verifica que el servidor esté encendido.'));
 }
 function reporte() {
   window.location.href = '/api/reporte';
@@ -471,13 +509,13 @@ function estadisticas() {
     document.getElementById('modal-botones').innerHTML = '<button class="btn-ok" onclick="cerrarModal()">Cerrar</button>';
     modal.classList.add('show');
     document.querySelector('.modal-card').classList.add('estadisticas');
-  }).catch(e => mostrarModal('Error de red'));
+  }).catch(e => mostrarModal('No se pudo conectar con el servidor. Verifica que el servidor esté encendido.'));
 }
 function borrar(dorsal) {
   confirmarModal('¿Borrar corredor número ' + dorsal + '?').then(r => {
     if (!r) return;
     fetch('/api/borrar', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({dorsal}) })
-      .then(r=>r.json()).then(d=> { if(d.error) mostrarModal(d.error); else toast('Corredor eliminado'); cargar(); }).catch(e => mostrarModal('Error de red'));
+      .then(r=>r.json()).then(d=> { if(d.error) mostrarModal(d.error); else toast('Corredor eliminado'); cargar(); }).catch(e => mostrarModal('No se pudo conectar con el servidor. Verifica que el servidor esté encendido.'));
   });
 }
 function importarExcel(file) {
@@ -491,6 +529,27 @@ function importarExcel(file) {
     .catch(e => { console.error('Error import:', e); mostrarModal('Error al importar: ' + e.message); })
     .finally(() => { inp.value = ''; });
 }
+function actualizarConexion(estado) {
+  const dot = document.getElementById('con-indicator');
+  const txt = document.getElementById('con-text');
+  dot.className = 'con-indicator ' + estado;
+  txt.textContent = estado === 'online' ? 'Conectado' : estado === 'offline' ? 'Desconectado' : 'Conectando...';
+}
+async function chequearConexion() {
+  actualizarConexion('checking');
+  try {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 8000);
+    const r = await fetch('/api/datos', { signal: ctrl.signal });
+    clearTimeout(timer);
+    if (r.ok) actualizarConexion('online');
+    else actualizarConexion('offline');
+  } catch {
+    actualizarConexion('offline');
+  }
+}
+setInterval(chequearConexion, 15000);
+chequearConexion();
 cargar();
 </script>
 </body>
