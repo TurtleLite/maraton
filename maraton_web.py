@@ -1,5 +1,6 @@
 import io
 import os
+import traceback
 import psycopg2
 import psycopg2.extras
 from datetime import datetime
@@ -18,7 +19,7 @@ def get_db():
             conn.autocommit = True
             g.db = conn
         except Exception as e:
-            print("DB error:", e)
+            traceback.print_exc()
             return None
     return g.db
 
@@ -46,7 +47,7 @@ def init_db():
             cur.execute("INSERT INTO carrera (iniciada) VALUES (FALSE)")
         cur.close()
     except Exception as e:
-        print("init_db error:", e)
+        traceback.print_exc()
 
 LOGO_IZQ = "/static/BURROTON 2026.png"
 LOGO_DER = "/static/LOGO SAN BENITO JOSE.png"
@@ -579,7 +580,7 @@ def api_datos():
             return jsonify(carrera_iniciada=False, hora_inicio=None, corredores=[])
         return jsonify(carrera_iniciada=c["iniciada"], hora_inicio=c["hora_inicio"].isoformat() if c["hora_inicio"] else None, corredores=corredores)
     except Exception as e:
-        print("datos error:", e)
+        traceback.print_exc()
         return jsonify(carrera_iniciada=False, hora_inicio=None, corredores=[])
 
 @app.route("/api/buscar")
@@ -603,7 +604,7 @@ def api_buscar():
             return jsonify(carrera_iniciada=False, hora_inicio=None, corredores=[])
         return jsonify(carrera_iniciada=c["iniciada"], hora_inicio=c["hora_inicio"].isoformat() if c["hora_inicio"] else None, corredores=corredores)
     except Exception as e:
-        print("buscar error:", e)
+        traceback.print_exc()
         return jsonify(carrera_iniciada=False, hora_inicio=None, corredores=[])
 
 @app.route("/api/registrar", methods=["POST"])
@@ -637,7 +638,7 @@ def api_registrar():
         cur.close()
         return jsonify(ok=True)
     except Exception as e:
-        print("registrar error:", e)
+        traceback.print_exc()
         return jsonify(error="Error al registrar"), 500
 
 @app.route("/api/iniciar", methods=["POST"])
@@ -652,16 +653,20 @@ def api_iniciar():
         cur.execute("SELECT id FROM carrera WHERE id = 1 FOR UPDATE")
         cur.execute("SELECT iniciada FROM carrera WHERE id = 1")
         if cur.fetchone()[0]:
-            conn.autocommit = True; cur.close()
+            cur.close()
+            conn.rollback()
+            conn.autocommit = True
             return jsonify(error="La carrera ya está iniciada."), 400
         ahora = datetime.now()
         cur.execute("UPDATE carrera SET iniciada = TRUE, hora_inicio = %s WHERE id = 1", (ahora,))
         conn.commit()
-        conn.autocommit = True; cur.close()
+        conn.autocommit = True
+        cur.close()
         return jsonify(ok=True)
     except Exception as e:
-        conn.rollback(); conn.autocommit = True
-        print("iniciar error:", e)
+        conn.rollback()
+        conn.autocommit = True
+        traceback.print_exc()
         return jsonify(error="Error al iniciar carrera"), 500
 
 @app.route("/api/llegada", methods=["POST"])
@@ -677,18 +682,26 @@ def api_llegada():
         cur = conn.cursor()
         cur.execute("SELECT iniciada FROM carrera WHERE id = 1")
         if not cur.fetchone()[0]:
-            conn.autocommit = True; cur.close()
+            cur.close()
+            conn.rollback()
+            conn.autocommit = True
             return jsonify(error="La carrera no ha iniciado."), 400
         cur.execute("SELECT id, nombre, categoria, tiempo_llegada FROM corredores WHERE dorsal = %s", (dorsal,))
         row = cur.fetchone()
         if not row:
-            conn.autocommit = True; cur.close()
+            cur.close()
+            conn.rollback()
+            conn.autocommit = True
             return jsonify(error="Número no encontrado."), 404
         if row[3]:
-            conn.autocommit = True; cur.close()
+            cur.close()
+            conn.rollback()
+            conn.autocommit = True
             return jsonify(error=f"{row[1]} ya llegó."), 400
         if categoria_filtro and (row[2] or "") != categoria_filtro:
-            conn.autocommit = True; cur.close()
+            cur.close()
+            conn.rollback()
+            conn.autocommit = True
             return jsonify(error=f"{row[1]} es {(row[2] or 'sin categoría')}, no {categoria_filtro}."), 400
         ahora = datetime.now()
         cat = row[2] or "Sin categoría"
@@ -698,18 +711,19 @@ def api_llegada():
         cur.execute("SELECT COUNT(*) FROM corredores WHERE tiempo_llegada IS NOT NULL AND COALESCE(categoria, '') = COALESCE(%s, '')", (row[2],))
         posicion_categoria = cur.fetchone()[0] + 1
         cur.execute("UPDATE corredores SET tiempo_llegada = %s, posicion = %s, posicion_categoria = %s WHERE id = %s", (ahora, posicion, posicion_categoria, row[0]))
-        conn.commit()
-        cur.execute("SELECT hora_inicio FROM carrera WHERE id = 1")
+        cur.execute("SELECT hora_inicio FROM carrera WHERE id = 1 FOR UPDATE")
         inicio = cur.fetchone()[0]
         trans = abs(ahora - inicio)
         h, resto = divmod(int(trans.total_seconds()), 3600)
         m, s = divmod(resto, 60)
-        conn.autocommit = True; cur.close()
+        conn.commit()
+        conn.autocommit = True
+        cur.close()
         return jsonify(ok=True, mensaje=f"¡{row[1]} llegó! #{posicion_categoria} en {cat} — {h}h {m}m {s}s")
     except Exception as e:
         conn.rollback()
         conn.autocommit = True
-        print("llegada error:", e)
+        traceback.print_exc()
         return jsonify(error="Error al registrar llegada"), 500
 
 @app.route("/api/resultados")
@@ -739,7 +753,7 @@ def api_resultados():
         cur.close()
         return jsonify(llegados=res)
     except Exception as e:
-        print("resultados error:", e)
+        traceback.print_exc()
         return jsonify(error="Error al obtener resultados"), 500
 
 @app.route("/api/finalizar", methods=["POST"])
@@ -754,15 +768,19 @@ def api_finalizar():
         cur.execute("SELECT id FROM carrera WHERE id = 1 FOR UPDATE")
         cur.execute("SELECT iniciada FROM carrera WHERE id = 1")
         if not cur.fetchone()[0]:
-            conn.autocommit = True; cur.close()
+            cur.close()
+            conn.rollback()
+            conn.autocommit = True
             return jsonify(error="La carrera no está iniciada."), 400
         cur.execute("UPDATE carrera SET iniciada = FALSE WHERE id = 1")
         conn.commit()
-        conn.autocommit = True; cur.close()
+        conn.autocommit = True
+        cur.close()
         return jsonify(ok=True)
     except Exception as e:
-        conn.rollback(); conn.autocommit = True
-        print("finalizar error:", e)
+        conn.rollback()
+        conn.autocommit = True
+        traceback.print_exc()
         return jsonify(error="Error al finalizar carrera"), 500
 
 @app.route("/api/importar_excel", methods=["POST"])
@@ -823,7 +841,7 @@ def api_importar_excel():
         info_val = f" Valor ejemplo: {ejemplo_valor}." if ejemplo_valor else ""
         return jsonify(mensaje=f"Se importaron {cont} corredores.{info_cat}{info_val}")
     except Exception as e:
-        print("importar excel error:", e)
+        traceback.print_exc()
         return jsonify(error="Error al procesar el Excel"), 500
 
 @app.route("/api/estadisticas")
@@ -875,7 +893,7 @@ def api_estadisticas():
             hora_inicio=inicio.isoformat() if inicio else None
         )
     except Exception as e:
-        print("estadisticas error:", e)
+        traceback.print_exc()
         return jsonify(error="Error al obtener estadísticas"), 500
 
 @app.route("/api/limpiar", methods=["POST"])
@@ -895,7 +913,7 @@ def api_limpiar():
         return jsonify(ok=True)
     except Exception as e:
         conn.rollback(); conn.autocommit = True
-        print("limpiar error:", e)
+        traceback.print_exc()
         return jsonify(error="Error al limpiar datos"), 500
 
 @app.route("/api/borrar", methods=["POST"])
@@ -925,7 +943,7 @@ def api_borrar():
         return jsonify(ok=True)
     except Exception as e:
         conn.rollback(); conn.autocommit = True
-        print("borrar error:", e)
+        traceback.print_exc()
         return jsonify(error="Error al borrar"), 500
 
 @app.route("/api/reporte")
@@ -977,7 +995,7 @@ def api_reporte():
         buf.seek(0)
         return send_file(buf, mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", as_attachment=True, download_name="reporte_maraton.xlsx")
     except Exception as e:
-        print("reporte error:", e)
+        traceback.print_exc()
         return jsonify(error="Error al generar reporte"), 500
 
 if __name__ == "__main__":
